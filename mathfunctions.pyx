@@ -26,8 +26,11 @@ def pYlm(l,m,thet,phi):
     else:
         return (-1)**m * (0.5) ** 0.5 * (rYlm(l, abs(m), thet, phi) + 1j * rYlm(l, -abs(m), thet, phi))
 
-def pspherical_wave_function(l: int, m: int, z: double, thet: double, phi: double) -> complex:
+def pspherical_wave_function(l: int, m: int, z: complex, thet: double, phi: double) -> complex:
     return sp.spherical_jn(l,z) * pYlm(l,m,thet,phi)
+
+def poutgo_spherical_wave_function(l: int, m: int, z: complex, thet: double, phi: double):
+    return (sp.spherical_in(l,z) + 1j * sp.spherical_yn(l,z)) * pYlm(l,m,thet,phi)
 
 def pcart_to_spher(np.ndarray[double, ndim=1,mode="c"] x,np.ndarray[double, ndim=1,mode="c"] y,np.ndarray[double, ndim=1,mode="c"] z,np.ndarray[double, ndim=1,mode="c"] r,np.ndarray[double, ndim=1,mode="c"] t,np.ndarray[double, ndim=1,mode="c"] f):
     cart_to_spher(&x[0],&y[0],&z[0],&r[0],&t[0],&f[0],len(x))

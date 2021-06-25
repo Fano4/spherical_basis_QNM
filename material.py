@@ -7,7 +7,12 @@ eV_um_scale = um_scale/1.23984193
 class material:
     def __init__(self,mat):
 
-        if mat == 'Au':
+        if isinstance(mat,(int,float)):
+            self.epsval = mat
+            self.wp = 0
+            self.gam = 0
+
+        elif mat == 'Au':
             self.wp = 8.926904839370055 # eV Novotny page 380
             self.gam = 0.07045803673417018 #eV Novotny page 380
         else:
@@ -15,10 +20,13 @@ class material:
         pass
 
     def eps(self,f):
-        w = f
-        wp = eV_um_scale * self.wp
-        gam = eV_um_scale * self.gam
-        return 1 - wp**2 / ( w**2 +1j * gam * w)
+        if self.wp != 0:
+            w = f
+            wp = eV_um_scale * self.wp
+            gam = eV_um_scale * self.gam
+            return 1 - wp**2 / ( w**2 +1j * gam * w)
+        else:
+            return self.epsval
 
     def n(self,f):
         Rez = np.real(self.eps(f))

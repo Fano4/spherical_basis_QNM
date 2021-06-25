@@ -48,7 +48,9 @@ double clebsch_gordan_coeff(unsigned int l1,unsigned int l2,unsigned int l3,int 
 void B_coeff(int l,int m1,int m2,std::vector<double> *B_val);
 double gen_I_integ(unsigned int l1,unsigned int l2,double zeta,double k);
 
-void square_root(double  *Rez, double *Imz, int len);
+
+double double_modulus(double a, double b);
+void square_root(double  *Rez,double *Imz,int len);
 void cart_to_spher(double* x,double* y,double* z,double * r,double* t,double *f,int length);
 void matrix_product(double *result_matrix,double *first_matrix,double *second_matrix,int dim1,int dim2,int dim3);
 void transpose(double *input,double *transposed, int n_rows_input, int n_col_input);

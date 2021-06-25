@@ -8,6 +8,7 @@
 
 #include "prime.hpp"
 #include <cstdlib>
+#include <iostream>
 #include <complex>
 #include <cmath>
 /*
@@ -19,17 +20,26 @@ def square_root(z):
     argument = np.mod(argument + theta, 2 * np.pi) - theta
     return np.sqrt(modulus) * np.exp(1j * argument / 2)
 */
+double double_modulus(double a, double b)
+{
+    double c = a;
+    while( c > b )
+    {
+       c -= c;
+    }
+    return c;
+}
 void square_root(double  *Rez,double *Imz,int len)
 { //Square root with different branch cut defined by alpha parameter.
 
-    pi = acos(-1);
+    double pi = acos(-1);
     for(int i = 0; i < len ; i++)
     {
-        z = std::complex<double>(Rez[i],Imz[i])
-        theta = pi/2;
-        argument = std::arg(z) // between -pi and +pi
-        modulus = std::abs(z);
-        argument = (argument + theta) % (2 * pi) - theta;
+        std::complex<double> z = std::complex<double>(Rez[i],Imz[i]);
+        double theta = pi/2;
+        double argument = std::arg(z); // between -pi and +pi
+        double modulus = std::abs(z);
+        argument = double_modulus(argument + theta, 2 * pi) - theta;
         Rez[i] = sqrt(modulus) * cos(argument/2);
         Imz[i] = sqrt(modulus) * sin(argument/2);
     }
@@ -54,7 +64,7 @@ void cart_to_spher(double* x,double* y,double* z,double * r,double* t,double *f,
          {
             f[i]=acos(-1)/2.;
          }
-         else if (x == 0 && y < 0 )
+         else if (x[i] == 0 && y[i] < 0 )
          {
             f[i]=3.*acos(-1)/2.;
          }
@@ -97,6 +107,122 @@ void transpose(double *A,double *B, int dim1, int dim2)
         }
     }
 }
+void fact_prime_decomposer(int N, int* N_prime)
+{
+   //This routine factorizes the factorial of an integer number into prime numbers. It uses a global and constant array with maximum integer MAX_N_FACTORIAL
+   if(N>MAX_N_FACTORIAL)
+   {
+      std::cout<<"ERROR ! FACTORIAL ARGUMENT LARGER THAN MAX AUTHORIZED VALUE ! N = "<<N<<std::endl;
+      exit(EXIT_SUCCESS);
+   }
+   else
+   {
+      for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
+      {
+         N_prime[i]=PRIME_DECOMPOSED_FAC[N][i];
+      }
+   }
+   return;
+}
+
+void prime_decomposer(int N, int* N_prime)
+{
+   //This routine factorizes an integer number into prime numbers.
+   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
+      N_prime[i]=0;
+
+   if(N==0)
+   {
+      std::cout<<"WARNING ! TRYING TO DECOMPOSE ZERO IN PRIME NUMBERS"<<std::endl;
+      return;
+   }
+   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
+   {
+      while( N%PRIME[i] == 0 )
+      {
+         N/=PRIME[i];
+         N_prime[i]++;
+      }
+   }
+   if(N!=1)
+   {
+      std::cout<<" INCOMPLETE FACTORIZATION. Remaining factor : "<<N<<std::endl;
+   }
+   return;
+}
+bool factorized_sum(int* x1,int* x2,int* out)
+{
+   //!!!!APPLIES ONLY TO FACTORIALS OF NUMBERS < MAX_N_FACTORIAL
+   //We want to compute the factorized representation of a sum of two integers
+   //1. we factorize the sum by comparing the vectors
+   //2. We explicitly compute the remaining sum
+   //3. we factorize the remaining sum and put everythingout
+
+   int remain1(1);
+   int remain2(1);
+   int remain[MAX_FACTORIAL_PRIME];
+
+   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
+   {
+      out[i]=0;
+      while(x1[i] != 0 && x2[i]!= 0)
+      {
+         out[i]++;
+         x1[i]--;
+         x2[i]--;
+      }
+      remain1*=pow(PRIME[i],x1[i]);
+      remain2*=pow(PRIME[i],x2[i]);
+   }
+   prime_decomposer(remain1+remain2,remain);
+   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
+   {
+      out[i]+=remain[i];
+   }
+   return 0;
+}
+int factorized_diff(int* x1,int* x2,int* out)
+{
+   //!!!!APPLIES ONLY TO FACTORIALS OF NUMBERS < MAX_N_FACTORIAL
+   //We want to compute the factorized representation of a difference of two integers x1-x2
+   //1. we factorize the sum by comparing the vectors
+   //2. We explicitly compute the remaining difference
+   //3. we factorize the remaining difference and keep track of the sign
+   //4. We put the resulting integer in the out array and the sign as a return
+
+   int sign(1);
+   int remain1(1);
+   int remain2(1);
+   int remain[MAX_FACTORIAL_PRIME];
+
+   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
+   {
+      out[i]=0;
+      while(x1[i] != 0 && x2[i]!= 0)
+      {
+         out[i]++;
+         x1[i]--;
+         x2[i]--;
+      }
+      remain1*=pow(PRIME[i],x1[i]);
+      remain2*=pow(PRIME[i],x2[i]);
+   }
+   //check the sign of the difference and factorize the difference
+   if(remain1 == remain2)
+      return 0;
+   else if(remain1>remain2)
+      prime_decomposer(remain1-remain2,remain);
+   else
+   {
+      prime_decomposer(remain2-remain1,remain);
+      sign=-1;
+   }
+   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
+   {
+      out[i]+=remain[i];
+   }
+   return sign;
+}
 unsigned long long int factorial(int n)
 {
    if(n>MAX_N_FACTORIAL)
@@ -117,7 +243,13 @@ unsigned long long int factorial(int n)
          return n*factorial(n-1);
    }
 }
-
+int dfactorial(int n)
+{
+   if(n<=1)
+      return 1;
+   else
+      return n*dfactorial(n-2);
+}
 long double intplushalf_gamma(int n) //(Gamma(n+1/2))
 {
    int fac1[MAX_FACTORIAL_PRIME];
@@ -187,7 +319,6 @@ double cube_dot_product(double *cube1,double *cube2,int nx,int ny, int nz,double
    double sum(0);
    int num(nx*ny*nz);
    int inc(1);
-   const MKL_INT lda(num);
 
    #pragma omp parallel for
    for(int i=0;i<angle_vec_size;i++)
@@ -264,126 +395,4 @@ double dj_ldz(int l,double z) //Derivative of the spherical bessel function of o
           std::cout<<" ERROR ! BESSEL DERIVATIVE FUNCTION IS NAN"<<std::endl;
       return (l*j_l(l-1,z)-(l+1)*j_l(l+1,z))/(2*l+1);
    }
-}
-int dfactorial(int n)
-{
-   if(n<=1)
-      return 1;
-   else
-      return n*dfactorial(n-2);
-}
-void prime_decomposer(int N, int* N_prime)
-{
-   //This routine factorizes an integer number into prime numbers.
-   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
-      N_prime[i]=0;
-
-   if(N==0)
-   {
-      std::cout<<"WARNING ! TRYING TO DECOMPOSE ZERO IN PRIME NUMBERS"<<std::endl;
-      return;
-   }
-   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
-   {
-      while( N%PRIME[i] == 0 )
-      {
-         N/=PRIME[i];
-         N_prime[i]++;
-      }
-   }
-   if(N!=1)
-   {
-      std::cout<<" INCOMPLETE FACTORIZATION. Remaining factor : "<<N<<std::endl;
-   }
-   return;
-}
-void fact_prime_decomposer(int N, int* N_prime)
-{
-   //This routine factorizes the factorial of an integer number into prime numbers. It uses a global and constant array with maximum integer MAX_N_FACTORIAL
-   if(N>MAX_N_FACTORIAL)
-   {
-      std::cout<<"ERROR ! FACTORIAL ARGUMENT LARGER THAN MAX AUTHORIZED VALUE ! N = "<<N<<std::endl;
-      exit(EXIT_SUCCESS);
-   }
-   else
-   {
-      for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
-      {
-         N_prime[i]=PRIME_DECOMPOSED_FAC[N][i];
-      }
-   }
-   return;
-}
-bool factorized_sum(int* x1,int* x2,int* out)
-{
-   //!!!!APPLIES ONLY TO FACTORIALS OF NUMBERS < MAX_N_FACTORIAL
-   //We want to compute the factorized representation of a sum of two integers
-   //1. we factorize the sum by comparing the vectors
-   //2. We explicitly compute the remaining sum
-   //3. we factorize the remaining sum and put everythingout
-
-   int remain1(1);
-   int remain2(1);
-   int remain[MAX_FACTORIAL_PRIME];
-
-   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
-   {
-      out[i]=0;
-      while(x1[i] != 0 && x2[i]!= 0)
-      {
-         out[i]++;
-         x1[i]--;
-         x2[i]--;
-      }
-      remain1*=pow(PRIME[i],x1[i]);
-      remain2*=pow(PRIME[i],x2[i]);
-   }
-   prime_decomposer(remain1+remain2,remain);
-   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
-   {
-      out[i]+=remain[i];
-   }
-   return 0;
-}
-int factorized_diff(int* x1,int* x2,int* out)
-{
-   //!!!!APPLIES ONLY TO FACTORIALS OF NUMBERS < MAX_N_FACTORIAL
-   //We want to compute the factorized representation of a difference of two integers x1-x2
-   //1. we factorize the sum by comparing the vectors
-   //2. We explicitly compute the remaining difference
-   //3. we factorize the remaining difference and keep track of the sign
-   //4. We put the resulting integer in the out array and the sign as a return
-
-   int sign(1);
-   int remain1(1);
-   int remain2(1);
-   int remain[MAX_FACTORIAL_PRIME];
-
-   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
-   {
-      out[i]=0;
-      while(x1[i] != 0 && x2[i]!= 0)
-      {
-         out[i]++;
-         x1[i]--;
-         x2[i]--;
-      }
-      remain1*=pow(PRIME[i],x1[i]);
-      remain2*=pow(PRIME[i],x2[i]);
-   }
-   //check the sign of the difference and factorize the difference
-   if(remain1 == remain2)
-      return 0;
-   else if(remain1>remain2)
-      prime_decomposer(remain1-remain2,remain);
-   else
-   {
-      prime_decomposer(remain2-remain1,remain);
-      sign=-1;
-   }
-   for(int i=0;i!=MAX_FACTORIAL_PRIME;i++)
-   {
-      out[i]+=remain[i];
-   }
-   return sign;
 }
