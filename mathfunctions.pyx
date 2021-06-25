@@ -9,6 +9,7 @@ cdef extern from "C_MathFunctions/mathfunctions.h":
     double rYlm(int l, int m, double thet, double phi)
     void cart_to_spher(double * x, double * y, double * z, double * r, double * t, double *f, int length)
     void square_root(double *Rez,double *Imz,int len)
+    double three_Ylm_integ(int l1, int l2, int l3, int m1, int m2, int m3)
 
 def psquare_root(np.ndarray[double, ndim=1,mode="c"] Rez, np.ndarray[double, ndim=1,mode="c"] Imz):
 
@@ -35,4 +36,5 @@ def poutgo_spherical_wave_function(l: int, m: int, z: complex, thet: double, phi
 def pcart_to_spher(np.ndarray[double, ndim=1,mode="c"] x,np.ndarray[double, ndim=1,mode="c"] y,np.ndarray[double, ndim=1,mode="c"] z,np.ndarray[double, ndim=1,mode="c"] r,np.ndarray[double, ndim=1,mode="c"] t,np.ndarray[double, ndim=1,mode="c"] f):
     cart_to_spher(&x[0],&y[0],&z[0],&r[0],&t[0],&f[0],len(x))
     pass
-
+def pgaunt_coeff(p,t,n,m,q):
+    return (-1)** (t+m) * three_Ylm_integ( p, n, q, t, m, -t-m )
