@@ -31,6 +31,9 @@ class material:
     def n(self,f):
         Rez = np.real(self.eps(f))
         Imz = np.imag(self.eps(f))
+        if not isinstance(Rez, np.ndarray):
+            Rez = np.array([Rez])
+            Imz = np.array([Imz])
         mathfunctions.psquare_root(Rez, Imz)
         return Rez + 1j*Imz
 
