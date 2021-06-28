@@ -2,6 +2,7 @@ import numpy as np
 import material
 import particle
 import mathfunctions
+import scipy.special as sp
 
 
 class sph_wf_symbol:
@@ -31,7 +32,6 @@ class sph_wf_symbol:
             return 0
 
         for i in range(self.length):
-            a = self.a[i]
             l = self.l[i]
             m = self.m[i]
             sph = part.cart_sph_cen_coord(r)
@@ -101,7 +101,7 @@ class sph_wf_symbol:
         self.length = len(self.a)
         pass
 
-    # TODO Implement a function that reduces the representation by explicitely adding the sph_wf with same l and m
+    # TODO Implement a function that reduces the representation by explicitly adding the sph_wf with same l and m
 
     def sph_deriv(self, sph_comp: int):
         """sph_comp = [-1,0,1]
@@ -160,5 +160,56 @@ class sph_wf_symbol:
         return self
 
 
+def normalization_cst(l, k, R):
+    modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, R)
+    Rez = np.real(1 / (modsqr))
+    Imz = np.imag(1 / (modsqr))
+    mathfunctions.psquare_root(Rez, Imz)
+    return Rez + 1j * Imz
+
+
 def sph_wf_deriv_tensor(a, l, m):
     return [[sph_wf_symbol(a, l, m).cart_deriv(i).cart_deriv(j) for i in range(3)] for j in range(3)]
+
+
+def med_sph_wf_ovlp(l, part, med, f):
+    # TODO Unit test med_sph_wf_ovlp
+    k = part.k(f)
+    kb = med.k(f)
+    R = part.R
+    normk = normalization_cst(l, k, R)
+    normkb = normalization_cst(l, kb, R)
+    prefac = normk * normkb
+    ovlp = prefac * mathfunctions.psph_Bessel_ovlp(l, k, kb, R)
+
+    return ovlp
+
+
+def space_rad_integ(l, k, kb):
+    # TODO Unit test space_rad_integ
+    return -1j / kb * 1 / (k ** 2 - kb ** 2) * (k / kb) ** l
+
+
+def fin_rad_integ(l, part, med, f):
+    # TODO Unit test fin_rad_integ
+    R = part.R
+    k = part.k(f)
+    kb = med.k(f)
+    normk = normalization_cst(l, k, R)
+    normkb = normalization_cst(l, kb, R)
+    ovlp_term = med_sph_wf_ovlp(l, part, med, f) / (normk * normkb)
+
+    Rez = np.real(1 / (k * kb))
+    Imz = np.imag(1 / (k * kb))
+    mathfunctions.psquare_root(Rez, Imz)
+
+    prefactor = (1j * np.pi/ 2) * (Rez + Imz*1j) / (k ** 2 - kb ** 2)
+
+    Rez = np.real((k / kb)**(2*l+1))
+    Imz = np.imag((k / kb)**(2*l+1))
+    mathfunctions.psquare_root(Rez, Imz)
+    fac = Rez + Imz*1j
+
+    main_term = k * R * sp.yv(l + 0.5, kb * R) * sp.jv(l + 1.5, k * R) - kb * R * sp.jv(l + 0.5, k * R) * sp.yv(l + 1.5,
+                                                                                                    kb * R) - fac * 2 / np.pi
+    return ovlp_term + prefactor * main_term

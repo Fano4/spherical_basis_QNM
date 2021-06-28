@@ -56,7 +56,7 @@ class separation_matrix:
                     val[q] = self.sph_wf[q].outgo_form(kwargs['r'], kwargs['f'], kwargs['medium'],
                                                        particle.particle(origin, 0, kwargs['medium']))
                 else:
-                    val[q] = self.sph_wf[q](kwargs['r'], kwargs['f'], kwargs['particle'])
+                    val[q] = self.sph_wf[q](kwargs['r'], kwargs['f'], kwargs['particle'])[1]
                 arg = self.gaunt_symbol_vec[q]
                 val[q] = val[q] * mathfunctions.pgaunt_coeff(arg[0], arg[1], arg[2], arg[3], arg[4])
 
