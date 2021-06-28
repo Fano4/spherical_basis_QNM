@@ -13,11 +13,18 @@ class material:
             self.gam = 0
 
         elif mat == 'Au':
+            self.epsval = 1
             self.wp = 8.926904839370055 # eV Novotny page 380
             self.gam = 0.07045803673417018 #eV Novotny page 380
         else:
             print("Error: Unknown material")
         pass
+
+    def __eq__(self, other):
+        if not isinstance(other, material):
+            return False
+        else:
+            return self.epsval == other.epsval and self.wp == other.wp and self.gam == other.gam
 
     def eps(self,f):
         if self.wp != 0:

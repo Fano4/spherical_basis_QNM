@@ -11,6 +11,12 @@ class particle:
         self.mat = mat  # Material structure
         pass
 
+    def __eq__(self, other):
+        if not isinstance(other, particle):
+            return False
+        else:
+            return self.R == other.R and self.pos == other.pos and self.mat == other.mat
+
     def cart_sph_cen_coord(self, r):
         """Transforms a cartesian coordinate vector to spherical coordinates cnetered on the particle"""
 
