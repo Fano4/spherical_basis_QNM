@@ -10,7 +10,7 @@ class sph_wf_symbol:
     The linear combination is of the form sum_i a_i \\psi^{l_i,m_i}
     the values of a_i,l_i and m_i are stored in distinct numpy arrays."""
 
-    def __init__(self, a=np.array([1]), l=np.array([0]), m=np.array([0])):
+    def __init__(self, a=np.array([1]), l = np.array([0]), m = np.array([0])):
         if not isinstance(l, np.ndarray):
             self.a = np.array([a])
             self.l = np.array([l])
@@ -172,10 +172,10 @@ def sph_wf_deriv_tensor(a, l, m):
     return [[sph_wf_symbol(a, l, m).cart_deriv(i).cart_deriv(j) for i in range(3)] for j in range(3)]
 
 
-def med_sph_wf_ovlp(l, part, med, f):
+def med_sph_wf_ovlp(l, part, f):
     # TODO Unit test med_sph_wf_ovlp
     k = part.k(f)
-    kb = med.k(f)
+    kb = part.med.k(f)
     R = part.R
     normk = normalization_cst(l, k, R)
     normkb = normalization_cst(l, kb, R)
@@ -190,14 +190,14 @@ def space_rad_integ(l, k, kb):
     return -1j / kb * 1 / (k ** 2 - kb ** 2) * (k / kb) ** l
 
 
-def fin_rad_integ(l, part, med, f):
+def fin_rad_integ(l, part, f):
     # TODO Unit test fin_rad_integ
     R = part.R
     k = part.k(f)
-    kb = med.k(f)
+    kb = part.med.k(f)
     normk = normalization_cst(l, k, R)
     normkb = normalization_cst(l, kb, R)
-    ovlp_term = med_sph_wf_ovlp(l, part, med, f) / (normk * normkb)
+    ovlp_term = med_sph_wf_ovlp(l, part, f) / (normk * normkb)
 
     Rez = np.real(1 / (k * kb))
     Imz = np.imag(1 / (k * kb))

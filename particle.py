@@ -5,10 +5,11 @@ import material
 
 
 class particle:
-    def __init__(self, pos, R, mat: material):
+    def __init__(self, pos, R, mat: material, medium: material):
         self.R = R  # Radius
         self.pos = pos  # Position of the particle in cartesian coordinate
         self.mat = mat  # Material structure
+        self.med = medium # Medium in which the particle is embedded
         pass
 
     def __eq__(self, other):

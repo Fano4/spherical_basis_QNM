@@ -5,6 +5,7 @@ import numpy as np
 
 
 class separation_matrix:
+    # TODO Test the separation matrix class
     def __init__(self, p, n, t, m):
         self.p = p
         self.n = n
