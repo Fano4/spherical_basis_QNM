@@ -36,7 +36,7 @@ class sph_wf_symbol:
             m = self.m[i]
             sph = part.cart_sph_cen_coord(r)
             modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, part.R)
-            norm_cst[i] = 1 / mathfunctions.psquare_root(np.real(modsqr), np.imag(modsqr))
+            norm_cst[i] = 1 / mathfunctions.psquare_root(np.real(modsqr), np.imag(modsqr)) # Branch cut square root
             values[i] = S * mathfunctions.pspherical_wave_function(l, m, k * sph[0], sph[1], sph[2])
         self._check_values()
         return np.array([norm_cst, values])

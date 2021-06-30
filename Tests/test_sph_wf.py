@@ -15,3 +15,10 @@ def test_init():
     assert (np.array_equal(c.a, a))
     assert (np.array_equal(c.l, l))
     assert (np.array_equal(c.m, m))
+
+# Spherical wave functions are complicated to test, as they have analytical values that can only be computed using the
+# very function we implemented. We will go for sanity checks, testing for the normalization, orthogonality
+def test_call_normalization():
+    assert(False)
+def test_call_orthogonality():
+    assert(False)

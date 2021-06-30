@@ -5,7 +5,7 @@ import material
 
 
 class particle:
-    def __init__(self, pos, R, mat: material, medium: material):
+    def __init__(self, pos, R, mat: material, medium: material=material.material(1.0)):
         self.R = R  # Radius
         self.pos = pos  # Position of the particle in cartesian coordinate
         self.mat = mat  # Material structure
@@ -16,7 +16,7 @@ class particle:
         if not isinstance(other, particle):
             return False
         else:
-            return self.R == other.R and self.pos == other.pos and self.mat == other.mat
+            return self.R == other.R and self.pos == other.pos and self.mat == other.mat and self.med == other.med
 
     def cart_sph_cen_coord(self, r):
         """Transforms a cartesian coordinate vector to spherical coordinates cnetered on the particle"""

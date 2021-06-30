@@ -17,10 +17,13 @@ def psquare_root(np.ndarray[double, ndim=1,mode="c"] Rez, np.ndarray[double, ndi
     return Rez+1j*Imz
 
 def psph_Bessel_ovlp(l: int, k: complex, kp: complex,r: double) -> complex:
-    return ( r**2 * PI ) * ( k * sp.jv(-0.5+l,r * k) * sp.jv(0.5+l,r * kp) - kp * sp.jv(-0.5+l,r * kp) * sp.jv(0.5+l,r * k)) / ( 2 * (k * kp)**0.5 * r * (kp**2 - k**2))
 
-def pYlm(l,m,thet,phi) -> complex:
+    if k == kp:
+        return ( r**2 * PI ) * ( sp.jv(0.5+l,r * k)**2 - sp.jv(-0.5+l,r * k) * sp.jv(1.5+l,r * k)) / ( 4 * k)
+    else:
+        return ( r**2 * PI ) * ( k * sp.jv(-0.5+l,r * k) * sp.jv(0.5+l,r * kp) - kp * sp.jv(-0.5+l,r * kp) * sp.jv(0.5+l,r * k)) / ( 2 * (k * kp)**0.5 * r * (kp**2 - k**2))
 
+def pYlm(l, m, thet, phi):
     if m < 0:
         return (0.5)**0.5 * ( rYlm(l,abs(m),thet,phi) - 1j * rYlm(l,-abs(m),thet,phi))
     elif m == 0:
@@ -28,11 +31,17 @@ def pYlm(l,m,thet,phi) -> complex:
     else:
         return (-1)**m * (0.5) ** 0.5 * (rYlm(l, abs(m), thet, phi) + 1j * rYlm(l, -abs(m), thet, phi))
 
-def pspherical_wave_function(l: int, m: int, z: complex, thet: double, phi: double) -> complex:
-    return sp.spherical_jn(l,z) * pYlm(l,m,thet,phi)
+def pspherical_wave_function(l: int, m: int, z, thet, phi, trans: bool = False) -> complex:
+    if trans:
+        return sp.spherical_jn(l, z) * (-1)**m * pYlm(l, -m, thet, phi)
+    else:
+        return sp.spherical_jn(l,z) * pYlm(l,m,thet,phi)
 
-def poutgo_spherical_wave_function(l: int, m: int, z: complex, thet: double, phi: double):
-    return (sp.spherical_in(l,z) + 1j * sp.spherical_yn(l,z)) * pYlm(l,m,thet,phi)
+def poutgo_spherical_wave_function(l: int, m: int, z: complex, thet: double, phi: double, trans: bool = False)-> complex:
+    if trans:
+        return (sp.spherical_jn(l, z) + 1j * sp.spherical_yn(l, z)) * (-1)**m * pYlm(l, -m, thet, phi)
+    else:
+        return (sp.spherical_jn(l,z) + 1j * sp.spherical_yn(l,z)) * pYlm(l,m,thet,phi)
 
 def pcart_to_spher(np.ndarray[double, ndim=1,mode="c"] x,np.ndarray[double, ndim=1,mode="c"] y,np.ndarray[double, ndim=1,mode="c"] z,np.ndarray[double, ndim=1,mode="c"] r,np.ndarray[double, ndim=1,mode="c"] t,np.ndarray[double, ndim=1,mode="c"] f):
     cart_to_spher(&x[0],&y[0],&z[0],&r[0],&t[0],&f[0],len(x))
