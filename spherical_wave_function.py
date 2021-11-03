@@ -10,7 +10,7 @@ class sph_wf_symbol:
     The linear combination is of the form sum_i a_i \\psi^{l_i,m_i}
     the values of a_i,l_i and m_i are stored in distinct numpy arrays."""
 
-    def __init__(self, a=np.array([1]), l = np.array([0]), m = np.array([0])):
+    def __init__(self, a=np.array([1]), l=np.array([0]), m=np.array([0])):
         if not isinstance(l, np.ndarray):
             self.a = np.array([a])
             self.l = np.array([l])
@@ -36,7 +36,7 @@ class sph_wf_symbol:
             m = self.m[i]
             sph = part.cart_sph_cen_coord(r)
             modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, part.R)
-            norm_cst[i] = 1 / mathfunctions.psquare_root(np.real(modsqr), np.imag(modsqr)) # Branch cut square root
+            norm_cst[i] = 1 / mathfunctions.psquare_root(np.real(modsqr), np.imag(modsqr))  # Branch cut square root
             values[i] = S * mathfunctions.pspherical_wave_function(l, m, k * sph[0], sph[1], sph[2])
         self._check_values()
         return np.array([norm_cst, values])
@@ -75,7 +75,6 @@ class sph_wf_symbol:
         values = np.zeros(self.length, dtype=complex)
         norm_cst = np.ones(self.length, dtype=complex)
         for i in range(self.length):
-            a = self.a[i]
             l = self.l[i]
             m = self.m[i]
             sph = part.cart_sph_cen_coord(r)  # Can be a fictive particle that serve as origin of the frame
@@ -113,11 +112,10 @@ class sph_wf_symbol:
 
         l = self.l
         m = self.m
-
         if sph_comp != 0:
             ss = np.sign(sph_comp)
             self.a = np.concatenate([- ss * ((l + ss * m + 2) * (l + ss * m + 1) / ((2 * l + 1) * (2 * l + 3))) ** 0.5,
-                                     - ss * ((l - ss * m) * (l - ss * m - 1) / (4 * l ** 2 - 1)) ** 0.5])
+                                     - (ss * ((l - ss * m) * (l - ss * m - 1) / (4 * l ** 2 - 1)) ** 0.5)])
             self.l = np.concatenate([l + 1, l - 1])
             self.m = np.concatenate([m + ss, m + ss])
 
@@ -135,10 +133,6 @@ class sph_wf_symbol:
         1/k ddx = -1/2 (ddm1 + ddp1)
         1/k ddy = 1j/2 (ddp1 - ddm1)
         1/k ddz = -dd0 """
-
-        l = self.l
-        m = self.m
-        dummy = sph_wf_symbol(self.a, self.l, self.m)
 
         if cart_comp == 0 or cart_comp == 1:
             ddm1 = self.sph_deriv(-1)
@@ -162,8 +156,8 @@ class sph_wf_symbol:
 
 def normalization_cst(l, k, R):
     modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, R)
-    Rez = np.real(1 / (modsqr))
-    Imz = np.imag(1 / (modsqr))
+    Rez = np.real(1 / modsqr)
+    Imz = np.imag(1 / modsqr)
     mathfunctions.psquare_root(Rez, Imz)
     return Rez + 1j * Imz
 
@@ -203,13 +197,13 @@ def fin_rad_integ(l, part, f):
     Imz = np.imag(1 / (k * kb))
     mathfunctions.psquare_root(Rez, Imz)
 
-    prefactor = (1j * np.pi/ 2) * (Rez + Imz*1j) / (k ** 2 - kb ** 2)
+    prefactor = (1j * np.pi / 2) * (Rez + Imz * 1j) / (k ** 2 - kb ** 2)
 
-    Rez = np.real((k / kb)**(2*l+1))
-    Imz = np.imag((k / kb)**(2*l+1))
+    Rez = np.real((k / kb) ** (2 * l + 1))
+    Imz = np.imag((k / kb) ** (2 * l + 1))
     mathfunctions.psquare_root(Rez, Imz)
-    fac = Rez + Imz*1j
+    fac = Rez + Imz * 1j
 
-    main_term = k * R * sp.yv(l + 0.5, kb * R) * sp.jv(l + 1.5, k * R) - kb * R * sp.jv(l + 0.5, k * R) * sp.yv(l + 1.5,
-                                                                                                    kb * R) - fac * 2 / np.pi
+    main_term = k * R * sp.yv(l + 0.5, kb * R) * sp.jv(l + 1.5, k * R) - kb * R * sp.jv(l + 0.5, k * R) \
+                * sp.yv(l + 1.5, kb * R) - fac * 2 / np.pi
     return ovlp_term + prefactor * main_term

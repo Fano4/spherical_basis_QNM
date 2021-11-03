@@ -1,3 +1,15 @@
+# This class implements a symbolic representation for the separation matrices between spherical wave functions.
+# The separation matrices are the expansion coefficients of spherical wave functions centered on one point
+# in the basis of spherical wave functions centered at another point.
+# The class is implemented according to the equations presented in dx.doi.org/10.1364/JOSAB.30.001996 (Ref 1)
+# Eqs. (C1) and (C3). the class uses the mathfunctions library develeoped previously.
+#
+#   Class initialization and options
+#       sep = separation_matrix.separation_matrix(p, n, t, m)
+#
+#       p, t are the l- and m- values of the final basis function
+#       n, m are the l- and m-value of the initial basis function
+
 import spherical_wave_function as swf
 import mathfunctions
 import particle
@@ -6,7 +18,7 @@ import numpy as np
 
 class separation_matrix:
     # TODO Test the separation matrix class
-    def __init__(self, p, n, t, m):
+    def __init__(self, p, t, n, m):
         self.p = p
         self.n = n
         self.t = t
@@ -15,10 +27,15 @@ class separation_matrix:
         self.bigq = 0
         self._set_q0()
         self._set_bigq()
+        if (n < 0 or abs(m) > n) or (p < 0 or abs(t) > p):
+            self.prefactor = 0
+            n = 0
+        else:
+            self.prefactor = 4 * np.pi * (-1) ** (self.n + self.m + self.bigq)
 
         self.sph_wf = []
-        self.gaunt_symbol_vec = np.zeros((self.bigq+1, 5))
-        for q in range(self.bigq+1):
+        self.gaunt_symbol_vec = np.zeros((self.bigq + 1, 5))
+        for q in range(int(self.bigq + 1)):
             self.sph_wf.append(swf.sph_wf_symbol((-1) ** q, self.q0 + 2 * q, t - m))
             self.gaunt_symbol_vec[q] = np.array([p, t, n, -m, self.q0 + 2 * q])
 
@@ -29,18 +46,18 @@ class separation_matrix:
         m = self.m
 
         if np.abs(p - n) >= np.abs(t + m):
-            self.q0 = np.abs(p - n)
+            self.q0 = int(np.abs(p - n))
         elif (p + n + np.abs(t + m)) % 2 == 0:
-            self.q0 = np.abs(p + m)
+            self.q0 = int(np.abs(p + m))
         else:
-            self.q0 = np.abs(p + m) + 1
+            self.q0 = int(np.abs(p + m) + 1)
         return
 
     def _set_bigq(self):
         p = self.p
         n = self.n
         q0 = self.q0
-        self.bigq = (p + n - q0) / 2
+        self.bigq = int((p + n - q0) / 2)
         return
 
     def __call__(self, **kwargs):
@@ -50,7 +67,7 @@ class separation_matrix:
 
         origin = np.array((0,0,0))
         val = np.zeros(self.bigq+1,dtype=complex)
-        prefactor = 4 * np.pi * (-1)**(self.n + self.m + self.bigq)
+
         try:
             for q in range(self.bigq+1):
                 if not kwargs['type']:
@@ -65,6 +82,6 @@ class separation_matrix:
             print("Missing keyword argument.")
             print(kwargs.keys())
 
-        val = val * prefactor
+        val = val * self.prefactor
 
         return val

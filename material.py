@@ -1,48 +1,67 @@
 import numpy as np
 import mathfunctions
 
-um_scale = 0.1
-eV_um_scale = um_scale/1.23984193
+# The equations and constants used have been published in https://doi.org/10.1117/1.JNP.8.083097
+
+um_scale = 1  # um_scale = 1 sets the reference length to 1 micrometer
+eV_um_scale = um_scale / 1.23984193
+hz_um_scale = um_scale / 2.9979246e14
+
+
+def eps_drude(fp, gam, f):
+    f = f / hz_um_scale
+    return - fp ** 2 / (f ** 2 + 1j * gam * f)
+
+
+def eps_lorentz(deps, fl, gaml, f):
+    f = f / hz_um_scale
+    return - deps * fl ** 2 / (f ** 2 - fl ** 2 + 1j * gaml * f)
+
 
 class material:
-    def __init__(self,mat):
+    # TODO unit testing
+    def __init__(self, mat):
 
-        if isinstance(mat,(int,float)):
+        self.drude_param = {}
+        self.lorentz_param = {}
+        self.epsval = 1
+
+        if isinstance(mat, (int, float)):
             self.epsval = mat
-            self.wp = 0
-            self.gam = 0
 
         elif mat == 'Au':
-            self.epsval = 1
-            self.wp = 8.926904839370055 # eV Novotny page 380
-            self.gam = 0.07045803673417018 #eV Novotny page 380
+            # TODO wavelength span 400-800nm
+            self.epsinf = 6.15991
+            self.drude_param = {
+                'wp': 1.3457e16,
+                'gam': 1.66938e15
+            }
+            self.lorentz_param = {
+                'deps': 2.07122,
+                'wp': 4.66171e15,
+                'gam': 7.20958e13
+            }
         else:
             print("Error: Unknown material")
         pass
 
-    def __eq__(self, other):
-        if not isinstance(other, material):
-            return False
-        else:
-            return self.epsval == other.epsval and self.wp == other.wp and self.gam == other.gam
-
-    def eps(self,f):
-        if self.wp != 0:
+    def eps(self, f):
+        # TODO unit testing
+        if len(self.drude_param) != 0:
             w = f
-            wp = eV_um_scale * self.wp
-            gam = eV_um_scale * self.gam
-            return 1 - wp**2 / ( w**2 +1j * gam * w)
+            return self.epsinf + eps_drude(self.drude_param['wp'], self.drude_param['gam'], f) \
+                   + eps_lorentz(self.lorentz_param['deps'], self.lorentz_param['wp'], self.lorentz_param['gam'], f)
         else:
             return self.epsval
 
-    def n(self,f):
+    def n(self, f):
         Rez = np.real(self.eps(f))
         Imz = np.imag(self.eps(f))
         if not isinstance(Rez, np.ndarray):
             Rez = np.array([Rez])
             Imz = np.array([Imz])
         mathfunctions.psquare_root(Rez, Imz)
-        return Rez + 1j*Imz
+        return Rez + 1j * Imz
 
-    def k(self,f):
+    def k(self, f):
         return self.n(f) * 2 * np.pi * f
