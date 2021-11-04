@@ -22,7 +22,7 @@ class sph_wf_symbol:
         self.length = len(self.a)
         self._check_values()
 
-    def __call__(self, r: float, f: complex, part: particle):
+    def __call__(self, r: np.ndarray, f: complex, part: particle):
         S = part.inout(r)
         k = part.k(f)
         values = np.zeros(self.length, dtype=complex)
@@ -70,7 +70,7 @@ class sph_wf_symbol:
 
     __rmul__ = __mul__
 
-    def outgo_form(self, r: float, f: complex, medium: material, part: particle):
+    def outgo_form(self, r: np.ndarray, f: complex, medium: material, part: particle):
         k = medium.k(f)
         values = np.zeros(self.length, dtype=complex)
         norm_cst = np.ones(self.length, dtype=complex)

@@ -7,68 +7,101 @@
 #
 
 import numpy as np
-import basis_set
+from scipy import linalg as lg
 from functools import partial
+
+import basis_set
+import material
+import particle
+import separation_matrix
 import spherical_wave_function as swf
 
 
 class green_function:
     def __init__(self, basis_set: basis_set.basis_set):
+        # The green's function depends on the geometry of the system and is decomposed in a bsis set.
         self.basis_set = basis_set
         self.rank = basis_set.size
-        for j in range(basis_set.npart):
-            for jp in range(basis_set.npart):
-                if j == jp:
-                    self.self_block(j)
-                else:
-                    self.scattering_block(j, jp)
-                    return
+
+        self.self_terms = (lg.norm(np.array(basis_set.distance_mat), axis=2) == 0).tolist()
+        # The Green's function has two types of terms. The self (single-particle) terms and the scattering terms.
+
+        # The scattering term involves the separation matrix between basis functions on distinct particles and
+        # separation matrix between their second derivatives.
+
+        # The self-term involves a principal integral inside the scatterer and an integral outside of the scatterer.
+
+        # The constructor doesn't compute any integral so that the Green's function class is symbolic.
+
         return
 
-    def self_block(self, part_j):
+    def __call__(self, *args, **kwargs):
+
+        f = args[0]
+
+        result = np.array((self.rank, self.rank, 3, 3), dtype=complex)
+
+        for bas_i in np.arange(0, self.rank):
+            for bas_j in np.arange(0, self.rank):
+                if self.self_terms[bas_i][bas_j]:
+                    result[bas_i, bas_j] = self.self_block(bas_i, bas_j, f)
+                else:
+                    result[bas_i, bas_j] = self.scattering_block(bas_i, bas_j, f)
+
+        return result
+
+    def self_block(self, bas_i, bas_j, f):
+        # The self block method returns a rank-3 matrix with all the components of the dyadic for a couple of
+        # basis functions
+
         if self.basis_set.bas_func == 'spherical':
-            return self_block_spherical(self.basis_set, part_j)
+            return self_block_spherical(self.basis_set, bas_i, bas_j, f)
         else:
             raise TypeError("Unsupported basis set type!")
 
-    def scattering_block(self, part_j, part_jp):
+    def scattering_block(self, bas_i, bas_j, f):
         if self.basis_set.bas_func == 'spherical':
-            return scattering_block_spherical(self.basis_set, part_j, part_jp)
+            return scattering_block_spherical(self.basis_set, bas_i, bas_j, f)
         else:
             raise TypeError("Unsupported basis set type!")
 
 
-def self_block_spherical(basis_set: basis_set.basis_set, part_j: int):
+def self_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f):
     # Eqs. (14), (18) and (20) in Ref. 1
     return
 
 
-def scattering_block_spherical(basis_set: basis_set.basis_set, part_j: int, part_jp: int):
+def scattering_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f):
     # Eq. (13) in Ref 1.
 
-    for lj in range(basis_set.n_sph_harm):
-        for mj in np.arange(-lj, lj + 1):
+    # Pre-factor section
+    med_wf_ovlp = basis_set.med_sph_wf_ovlp(f)
+    wf_norm = basis_set.sph_wf_norm('background', f)
+    kb = basis_set.part.med.k(f)
+    prefactor = 1j * kb * med_wf_ovlp[bas_i] * med_wf_ovlp[bas_j] / (wf_norm[bas_i] * wf_norm[bas_j])
+    # Diagonal part
+    diag_sep = basis_set.basis_separation_mat[bas_i][bas_j](type=0, r=basis_set.distance_mat[bas_i][bas_j],
+                                                            f=f, medium=basis_set.part.med)
 
-            index = basis_set.jlm_to_index(part_j, lj, mj)
-            psi = basis_set(part_j, lj, mj)
-            med_sph_wf_ovlp_jlm = basis_set.med_sph_wf_ovlp
-            norm_wf_b_jlm = partial(basis_set.sph_wf_norm, 'background')
+    # dyadic part
+    # This part is actually more tricky. It is the separation matrix element with respect to the Hessian.
+    # There is one separation matrix per term in each Hessian matrix element.
 
-            for ljp in range(basis_set.n_sph_harm):
-                for mjp in np.arange(-ljp, ljp + 1):
-                    indexp = basis_set.jlm_to_index(part_jp, ljp, mjp)
-                    psip = basis_set(part_jp, ljp, mjp)
+    # For each component of the Hessian matrix, we seek the coefficients, l and m values
+    amjl = [[basis_set.basis_hessian[bas_j][i][j].a for i in range(0, 3)] for j in range(0, 3)]
+    lmjl = [[basis_set.basis_hessian[bas_j][i][j].l for i in range(0, 3)] for j in range(0, 3)]
+    mmjl = [[basis_set.basis_hessian[bas_j][i][j].m for i in range(0, 3)] for j in range(0, 3)]
 
-                    # Each matrix element is a rank-3 tensor. There are 9 cartesian components
-                    # that we address individually
-                    # xx
-                    # xy
-                    # xz
+    # Now, we generate a list of separation matrices for the corresponding components
+    hessian_sep_mat = [[separation_matrix.separation_matrix(basis_set.jlm_to_index(bas_i)[1],
+                                                            basis_set.jlm_to_index(bas_i)[2], lmjl[i][j], mmjl[i][j])
+                        for i in range(0, 3)] for j in range(0, 3)]
 
-                    # yx
-                    # yy
-                    # yz
-
-                    # zx
-                    # zy
-                    # zz
+    result = []
+    for j in range(0, 3):
+        result.append(
+            [(i == j) * diag_sep + (1 / kb ** 2) *
+             np.sum(amjl[i][j] * hessian_sep_mat[i][j](type=0, r=basis_set.distance_mat[bas_i][bas_j],
+                                                       f=f, medium=basis_set.part.med))
+             for i in range(0, 3)])
+    return prefactor * result

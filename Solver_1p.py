@@ -51,5 +51,5 @@ input_field = field.field(input_field_coeff, freq_cent=input_field_freq)
 # we use Eqs (14), (15a) and (15b) of ref 1
 
 sph_wf_basis = basis_set.basis_set(type="spherical", lmax=lmax, part=part)
-bg_green = green_function.green_function()
+bg_green = green_function.green_function(sph_wf_basis)
 exit()

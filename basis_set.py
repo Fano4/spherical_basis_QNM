@@ -118,4 +118,4 @@ class basis_set:
                                           self.part[self.jlm_to_index(i)[0]].R)
                     for i in range(self.size)]
         else:
-            raise ValueError('Unrecognized normalization type.')
+            raise ValueError('Unrecognized normalization type. Support types are \'mat\' and \'background\' ')
