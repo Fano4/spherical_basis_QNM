@@ -23,6 +23,7 @@ class sph_wf_symbol:
         self._check_values()
 
     def __call__(self, r: np.ndarray, f: complex, part: particle):
+        # TODO: Unit testing sph_wf_symbol call
         S = part.inout(r)
         k = part.k(f)
         values = np.zeros(self.length, dtype=complex)
@@ -42,6 +43,7 @@ class sph_wf_symbol:
         return np.array([norm_cst, values])
 
     def __add__(self, other):
+        # TODO: Unit testing overload __add__ in sph_wf_symbol
         a = np.concatenate([self.a, other.a])
         l = np.concatenate([self.l, other.l])
         m = np.concatenate([self.m, other.m])
@@ -50,15 +52,18 @@ class sph_wf_symbol:
     __radd__ = __add__
 
     def __sub__(self, other):
+        # TODO: Unit testing overload __sub__ in sph_wf_symbol
         a = np.concatenate([self.a, -other.a])
         l = np.concatenate([self.l, other.l])
         m = np.concatenate([self.m, other.m])
         return sph_wf_symbol(a, l, m)
 
     def __neg__(self):
+        # TODO: Unit testing overload __neg__ in sph_wf_symbol
         return sph_wf_symbol(-self.a, self.l, self.m)
 
     def __mul__(self, other: (float, complex, int)):
+        # TODO: Unit testing overload __mul__ in sph_wf_symbol
         # if isinstance(other, (float,complex,int) ):
         a = other * self.a
         l = self.l
@@ -71,6 +76,7 @@ class sph_wf_symbol:
     __rmul__ = __mul__
 
     def outgo_form(self, r: np.ndarray, f: complex, medium: material, part: particle):
+        # TODO: Unit testing outgoing form in sph_wf_symbol
         k = medium.k(f)
         values = np.zeros(self.length, dtype=complex)
         norm_cst = np.ones(self.length, dtype=complex)
@@ -82,7 +88,7 @@ class sph_wf_symbol:
         return np.array([norm_cst, values])
 
     def _check_values(self):
-
+        # TODO: Unit testing check_values in sph_wf_symbol
         if not (self.a.shape == self.l.shape and self.a.shape == self.m.shape):
             print("Error: Linear combination of spherical basis function defined with arrays of different lengths")
             print(self.a.shape, self.l.shape, self.m.shape)
@@ -103,6 +109,7 @@ class sph_wf_symbol:
     # TODO Implement a function that reduces the representation by explicitly adding the sph_wf with same l and m
 
     def sph_deriv(self, sph_comp: int):
+        # TODO: Unit testing sph_deriv in sph_wf_symbol
         """sph_comp = [-1,0,1]
         This routine returns the derivative array of a spherical basis function in the form of
         an array with three columns : coefficient, l and m for the new functions
@@ -129,6 +136,7 @@ class sph_wf_symbol:
         return self
 
     def cart_deriv(self, cart_comp: int):
+        # TODO: Unit testing cart_deriv in sph_wf_symbol
         """This routine returns the derivative vector of a spherical basis function w r t cartesian coordinates
         1/k ddx = -1/2 (ddm1 + ddp1)
         1/k ddy = 1j/2 (ddp1 - ddm1)
@@ -155,6 +163,7 @@ class sph_wf_symbol:
 
 
 def normalization_cst(l, k, R):
+    # TODO: Unit testing normalization_cst in sph_wf_symbol
     modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, R)
     Rez = np.real(1 / modsqr)
     Imz = np.imag(1 / modsqr)
@@ -163,11 +172,12 @@ def normalization_cst(l, k, R):
 
 
 def sph_wf_deriv_tensor(a, l, m):
+    # TODO: Unit testing sph_wf_deriv_tensor in sph_wf_symbol
     return [[sph_wf_symbol(a, l, m).cart_deriv(i).cart_deriv(j) for i in range(3)] for j in range(3)]
 
 
 def med_sph_wf_ovlp(l, part, f):
-    # TODO Unit test med_sph_wf_ovlp
+    # TODO Unit test med_sph_wf_ovlp in sph_wf_symbol
     k = part.k(f)
     kb = part.med.k(f)
     R = part.R

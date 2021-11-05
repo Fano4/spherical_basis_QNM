@@ -18,7 +18,7 @@ class field:
     """
 
     def __init__(self, *args, **kwargs):
-
+        # TODO: Unit test constructor in field class
         self.sph_coeff = args[0]
         if 'type' in kwargs.keys():
             self.type = kwargs['type']
@@ -46,7 +46,7 @@ class field:
         return
 
     def __call__(self, f: float):
-
+        # TODO: Unit test call in field class
         if self.type == 'classical':
             if isinstance(self.freq, float):
                 return float(self.freq == f)

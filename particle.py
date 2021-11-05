@@ -17,8 +17,8 @@ class particle:
         pass
 
     def cart_sph_cen_coord(self, r):
-        """Transforms a cartesian coordinate vector to spherical coordinates cnetered on the particle"""
-
+        """Transforms a cartesian coordinate vector to spherical coordinates centered on the particle"""
+        # TODO: Unit testing  cartesian to spherical coordiantes
         if len(r.shape) == 2:
             x = np.stack([r[0] - self.pos[0], r[1] - self.pos[1], r[2] - self.pos[2]])
         elif len(r.shape) == 1:
@@ -36,6 +36,7 @@ class particle:
         return sph
 
     def inout(self, r):
+        # TODO: Unit testing inout particle
         return self.R ** 2 > (r[0] - self.pos[0]) ** 2 + (r[1] - self.pos[1]) ** 2 + (r[2] - self.pos[2]) ** 2
 
     def k(self,f):

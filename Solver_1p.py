@@ -44,6 +44,7 @@ input_field_coeff = np.zeros((lmax + 1) ** 2, dtype=complex)
 input_field_freq = np.zeros((lmax + 1) ** 2, dtype=float)
 input_field_coeff[0] = 1
 input_field_freq[0] = 1 / R
+f0 = input_field_freq[0]
 input_field = field.field(input_field_coeff, freq_cent=input_field_freq)
 
 # Now the nano-particle response is computed by isolating the total field term in Eq. (8) of ref 1
@@ -52,4 +53,9 @@ input_field = field.field(input_field_coeff, freq_cent=input_field_freq)
 
 sph_wf_basis = basis_set.basis_set(type="spherical", lmax=lmax, part=part)
 bg_green = green_function.green_function(sph_wf_basis)
+
+array = bg_green(f0)
+
+print(array)
+
 exit()

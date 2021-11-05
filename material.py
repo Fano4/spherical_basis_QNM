@@ -9,19 +9,20 @@ hz_um_scale = um_scale / 2.9979246e14
 
 
 def eps_drude(fp, gam, f):
+    # TODO: Unit testing eps drude
     f = f / hz_um_scale
     return - fp ** 2 / (f ** 2 + 1j * gam * f)
 
 
 def eps_lorentz(deps, fl, gaml, f):
+    # TODO: Unit testing eps Lorentz
     f = f / hz_um_scale
     return - deps * fl ** 2 / (f ** 2 - fl ** 2 + 1j * gaml * f)
 
 
 class material:
-    # TODO unit testing
+    # TODO unit testing class material
     def __init__(self, mat):
-
         self.drude_param = {}
         self.lorentz_param = {}
         self.epsval = 1
@@ -55,6 +56,7 @@ class material:
             return self.epsval
 
     def n(self, f):
+        # TODO: Unit testing refraction index
         Rez = np.real(self.eps(f))
         Imz = np.imag(self.eps(f))
         if not isinstance(Rez, np.ndarray):
@@ -64,4 +66,5 @@ class material:
         return Rez + 1j * Imz
 
     def k(self, f):
+        # TODO: Unit testing wavenumber
         return self.n(f) * 2 * np.pi * f

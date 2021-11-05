@@ -16,6 +16,7 @@ import spherical_wave_function as swf
 
 class green_function:
     def __init__(self, basis_set: basis_set.basis_set):
+        # TODO: Unit test Green's function constructor
         # The green's function depends on the geometry of the system and is decomposed in a bsis set.
         self.basis_set = basis_set
         self.rank = basis_set.size
@@ -33,7 +34,7 @@ class green_function:
         return
 
     def __call__(self, *args, **kwargs):
-
+        # TODO: Unit test call Green's function
         f = args[0]
 
         result = np.array((self.rank, self.rank, 3, 3), dtype=complex)
@@ -48,6 +49,7 @@ class green_function:
         return result
 
     def self_block(self, bas_i, bas_j, f):
+        # TODO: Unit test self_block in Green's function
         # The self block method returns a rank-3 matrix with all the components of the dyadic for a couple of
         # basis functions
 
@@ -57,6 +59,7 @@ class green_function:
             raise TypeError("Unsupported basis set type!")
 
     def scattering_block(self, bas_i, bas_j, f):
+        # TODO: Unit test scattering block in Green's function
         if self.basis_set.bas_func == 'spherical':
             return scattering_block_spherical(self.basis_set, bas_i, bas_j, f)
         else:
@@ -64,6 +67,7 @@ class green_function:
 
 
 def self_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f):
+    # TODO: Unit test self_block_spherical basis in green's function
     # Eqs. (14), (18) and (20) in Ref. 1
 
     kb = basis_set.part.med.k(f)
@@ -120,7 +124,7 @@ def self_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f):
 
 
 def scattering_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f):
-    # TODO: Unit test scattering term
+    # TODO: Unit test scattering block spheical in green's funciton
     # TODO Check the indices of the separation matrices!
     # Eq. (13) in Ref 1.
 

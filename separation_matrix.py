@@ -9,7 +9,6 @@
 #
 #       p, t are the l- and m- values of the final basis function
 #       n, m are the l- and m-value of the initial basis function
-import basis_set
 import spherical_wave_function as swf
 import mathfunctions
 import particle
@@ -17,8 +16,8 @@ import numpy as np
 
 
 class separation_matrix:
-    # TODO Test the separation matrix class
     def __init__(self, p, t, n, m):
+        # TODO Test constructor in separation matrix class
         self.p = p
         self.n = n
         self.t = t
@@ -40,6 +39,7 @@ class separation_matrix:
             self.gaunt_symbol_vec[q] = np.array([p, t, n, -m, self.q0 + 2 * q])
 
     def _set_q0(self):
+        # TODO: Test set_q0 in separation matrix class
         p = self.p
         n = self.n
         t = self.t
@@ -54,6 +54,7 @@ class separation_matrix:
         return
 
     def _set_bigq(self):
+        # TODO: Test set_bigq in separation matrix class
         p = self.p
         n = self.n
         q0 = self.q0
@@ -61,7 +62,7 @@ class separation_matrix:
         return
 
     def __call__(self, **kwargs):
-
+        # TODO: Test call in separation matrix class
         # parameter type controls the type of spherical basis function used in the expansion.
         # type=0 => hankel ; type=1 => bessel
 
@@ -86,7 +87,8 @@ class separation_matrix:
 
         return val
 
-    def sph_basis_proj(self, basis_set: basis_set.basis_set, f):
+    def sph_basis_proj(self, basis_set, f):
+        # TODO: test sph_basis_proj in separation_matrix class
         # Computes the bracket < D | psi > for all the psi in the basis set
         origin = np.array((0, 0, 0))
         val = np.zeros((basis_set.size, self.bigq + 1), dtype=complex)
