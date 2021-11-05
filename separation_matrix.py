@@ -9,7 +9,7 @@
 #
 #       p, t are the l- and m- values of the final basis function
 #       n, m are the l- and m-value of the initial basis function
-
+import basis_set
 import spherical_wave_function as swf
 import mathfunctions
 import particle
@@ -82,6 +82,25 @@ class separation_matrix:
             print("Missing keyword argument.")
             print(kwargs.keys())
 
-        val = val * self.prefactor
+        val = np.sum(val) * self.prefactor
+
+        return val
+
+    def sph_basis_proj(self, basis_set: basis_set.basis_set, f):
+        # Computes the bracket < D | psi > for all the psi in the basis set
+        origin = np.array((0, 0, 0))
+        val = np.zeros((basis_set.size, self.bigq + 1), dtype=complex)
+
+        for i in range(basis_set.size):
+            lref = basis_set(i).l
+            mref = basis_set(i).m
+            norm_cst = basis_set.sph_wf_norm('mat', f)[i]
+
+            for q in range(self.bigq + 1):
+                val[i, q] = norm_cst * (lref == self.sph_wf[q].l) * (mref == self.sph_wf[q].m)
+                arg = self.gaunt_symbol_vec[q]
+                val[i, q] = val[i, q] * mathfunctions.pgaunt_coeff(arg[0], arg[1], arg[2], arg[3], arg[4])
+
+        val = np.sum(val, axis=1) * self.prefactor
 
         return val
