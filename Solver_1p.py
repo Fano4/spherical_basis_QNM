@@ -25,7 +25,7 @@ import field
 # Parameters of the computation:
 import particle
 
-lmax = 2
+lmax = 0
 wmin = 0.3
 wmax = 0.8
 
@@ -51,11 +51,14 @@ input_field = field.field(input_field_coeff, freq_cent=input_field_freq)
 # We need to decompose the background dyadic Green's function in the spherical waves basis.  In that purpose,
 # we use Eqs (14), (15a) and (15b) of ref 1
 
+print("Initializing the basis set")
 sph_wf_basis = basis_set.basis_set(type="spherical", lmax=lmax, part=part)
+print("Initializing the Green's function")
 bg_green = green_function.green_function(sph_wf_basis)
 
+print("Calling Green's function")
 array = bg_green(f0)
-
-print(array)
+print("Output green function array: ")
+print(array.shape)
 
 exit()

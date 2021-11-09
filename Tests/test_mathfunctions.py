@@ -1,5 +1,4 @@
 import sys
-import scipy
 import scipy.integrate as integ
 import scipy.special as sp
 import random
@@ -103,7 +102,7 @@ def test_sph_harmo_norm():
         val = np.sum(integrand) * dS
         ref = 1
         av_re_error = av_re_error + ((np.real(val) - np.real(ref)) / np.real(ref)) / n_test
-        print(av_re_error)
+        # print(av_re_error)
     assert (np.abs(av_re_error) < 1e-2)
 
 
@@ -122,7 +121,7 @@ def test_spherical_wf():
         m = random.randint(-l, l)
         freq = 0.05 + 0.95 * random.random()
         k = freq
-        print("test ", R,l,m,k)
+        #print("test ", R,l,m,k)
 
         # Monte Carlo variable distributions
         nsample = int(4e5)
@@ -142,6 +141,6 @@ def test_spherical_wf():
         ref = mf.psph_Bessel_ovlp(l, k, k, R)
         err = ((np.real(val) - np.real(ref)) / np.real(ref))
         av_re_error = av_re_error + err/n_test
-        print(np.real(val) ,np.real(ref),err)
+        # print(np.real(val) ,np.real(ref),err)
     assert(np.abs(av_re_error) < 1e-2)
 

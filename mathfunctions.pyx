@@ -13,7 +13,6 @@ cdef extern from "C_MathFunctions/mathfunctions.h":
 
 def psquare_root(np.ndarray[double, ndim=1,mode="c"] Rez, np.ndarray[double, ndim=1,mode="c"] Imz):
     square_root(&Rez[0],&Imz[0],len(Rez))
-    print(Rez,Imz)
     return Rez+1j*Imz
 
 def psph_Bessel_ovlp(l: int, k: complex, kp: complex,r: double) -> complex:
@@ -48,5 +47,4 @@ def pcart_to_spher(np.ndarray[double, ndim=1,mode="c"] x,np.ndarray[double, ndim
     pass
 
 def pgaunt_coeff(p,t,n,m,q):
-    return (-1) ** (t+m) * three_Ylm_integ( p, n, q, t, m, -t-m )
-
+    return (-1) ** (abs(t + m)) * three_Ylm_integ(p, n, q, t, m, -t - m)

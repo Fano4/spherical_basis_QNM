@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-sys.path.append('/Users/stephan/PycharmProjects/spherical_basis_QNM/')
+sys.path.append('~/PycharmProjects/spherical_basis_QNM/')
 import material
 
 

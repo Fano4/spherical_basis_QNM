@@ -24,7 +24,8 @@ class basis_set:
             if self.bas_func == 'spherical':
                 # Initialize spherical basis functions
 
-                self.lmax = kwargs['lmax']
+                self.lmax_ini = kwargs['lmax']
+                self.lmax = self.lmax_ini
 
                 if isinstance(kwargs['part'], list):
                     self.npart = len(kwargs['part'])
@@ -33,21 +34,34 @@ class basis_set:
                     self.npart = 1
 
                 self.part = kwargs['part']
-                self.n_sph_harm = (self.lmax + 1) ** 2
-                self.size = self.npart * self.n_sph_harm
-
-                # The basis set is a list of single spherical wave function symbols spanning all the particles
-                self.basis = [swf.sph_wf_symbol(1, self.jlm_to_index(i)[1], self.jlm_to_index(i)[2])
-                              for i in range(self.size)]
+                self.n_sph_harm_ini = (self.lmax_ini + 1) ** 2
+                self.size_ini = self.npart * self.n_sph_harm_ini
 
                 # The Hessian matrix is a rank-3 tensor of the spherical basis function symbols' second derivatives.
                 # Each symbol is a component of the Hessian in cartesian coordinates.
                 self.basis_hessian = [swf.sph_wf_deriv_tensor(1, self.jlm_to_index(i)[1],
+                                                              self.jlm_to_index(i)[2]) for i in range(self.size_ini)]
+
+                for i in range(self.size_ini):
+                    for j in range(3):
+                        for k in range(3):
+                            if any(self.basis_hessian[i][j][k].l > self.lmax):
+                                self.lmax = np.max(self.basis_hessian[i][j][k].l)
+
+                self.n_sph_harm = (self.lmax + 1) ** 2
+                self.size = self.npart * self.n_sph_harm
+                # The basis set is a list of single spherical wave function symbols spanning all the particles
+                self.basis = [swf.sph_wf_symbol(1, self.jlm_to_index(i)[1], self.jlm_to_index(i)[2])
+                              for i in range(self.size)]
+
+                # Redefine the basis hessian for the new size
+                self.basis_hessian = [swf.sph_wf_deriv_tensor(1, self.jlm_to_index(i)[1],
                                                               self.jlm_to_index(i)[2]) for i in range(self.size)]
+
 
                 # The separation matrix projects basis functions supported by one particle onto the basis functions
                 # supported by another particle. The separation matrix is represented as a [self.size]**2 matrix
-                self.basis_separation_mat = [[sep.separation_matrix(self.jlm_to_index(i)[1], self.jlm_to_index(i)[2],
+                self.basis_separation_mat = [[sep.separation_matrix(1, self.jlm_to_index(i)[1], self.jlm_to_index(i)[2],
                                                                     self.jlm_to_index(j)[1], self.jlm_to_index(j)[2])
                                               for i in range(self.size)] for j in range(self.size)]
 
@@ -88,6 +102,15 @@ class basis_set:
         else:
             raise KeyError("Undefined basis function type. please choose either regular or deriv")
 
+    def hessian_proj(self, index, i, j):
+        val = np.zeros(self.size, dtype=complex)
+        for k in range(self.size):
+            for kp in range(self.basis_hessian[index][i][j].length):
+                if self.basis[k].l == self.basis_hessian[index][i][j].l[kp] \
+                        and self.basis[k].m == self.basis_hessian[index][i][j].m[kp]:
+                    val[k] = val[k] + self.basis_hessian[index][i][j].a[kp]
+        return val
+
     def jlm_to_index(self, *args):
         # TODO: Unit testing jlm_to_index in basis_set
         if len(args) == 3:
@@ -105,10 +128,12 @@ class basis_set:
     def med_sph_wf_ovlp(self, f):
         # TODO: Unit testing med_sph_wf_ovlp in basis_set
         # Eq. (7c) in Ref 1
-        return [swf.med_sph_wf_ovlp(self.basis[i].l,
-                                    self.part[self.jlm_to_index(i)[0]],
-                                    f)
-                for i in range(self.size)]
+        if isinstance(self.part, list):
+            return [swf.med_sph_wf_ovlp(self.basis[i].l, self.part[self.jlm_to_index(i)[0]], f)
+                    for i in range(self.size)]
+        else:
+            return [swf.med_sph_wf_ovlp(self.basis[i].l, self.part, f)
+                    for i in range(self.size)]
 
     def sph_wf_norm(self, functype, f):
         # TODO: Unit testing sph_wf_norm in basis_set

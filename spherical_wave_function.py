@@ -12,9 +12,9 @@ class sph_wf_symbol:
 
     def __init__(self, a=np.array([1]), l=np.array([0]), m=np.array([0])):
         if not isinstance(l, np.ndarray):
-            self.a = np.array([a])
-            self.l = np.array([l])
-            self.m = np.array([m])
+            self.a = np.array([a], dtype=complex)
+            self.l = np.array([l], dtype=int)
+            self.m = np.array([m], dtype=int)
         else:
             self.a = a
             self.l = l
@@ -22,48 +22,58 @@ class sph_wf_symbol:
         self.length = len(self.a)
         self._check_values()
 
-    def __call__(self, r: np.ndarray, f: complex, part: particle):
-        # TODO: Unit testing sph_wf_symbol call
-        S = part.inout(r)
+    def __call__(self, r: np.ndarray, f: complex, part: particle, trans=False):
         k = part.k(f)
-        values = np.zeros(self.length, dtype=complex)
-        norm_cst = np.zeros(self.length, dtype=complex)
-
         if self.length == 0:
             return 0
+        norm_cst = self.norm(k, part)
+        values = self.eval(r, k, part, trans)
+        self._check_values()
+        return [norm_cst, values]
 
+    def norm(self, k, part):
+        norm_cst = np.zeros(self.length, dtype=complex)
+        for i in range(self.length):
+            l = self.l[i]
+            modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, part.R)
+            # if isinstance(modsqr, np.ndarray):
+            #   norm_cst[i] = 1 / mathfunctions.psquare_root(np.real(modsqr), np.imag(modsqr))  # Branch cut square root
+            # elif isinstance(modsqr, complex):
+            norm_cst[i] = 1 / np.sqrt(modsqr)  # Branch cut square root
+        return norm_cst
+
+    def eval(self, r, k, part, trans=False):
+        S = part.inout(r)
+        values = np.zeros(self.length, dtype=complex)
         for i in range(self.length):
             l = self.l[i]
             m = self.m[i]
             sph = part.cart_sph_cen_coord(r)
-            modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, part.R)
-            norm_cst[i] = 1 / mathfunctions.psquare_root(np.real(modsqr), np.imag(modsqr))  # Branch cut square root
-            values[i] = S * mathfunctions.pspherical_wave_function(l, m, k * sph[0], sph[1], sph[2])
-        self._check_values()
-        return np.array([norm_cst, values])
+            values[i] = S * mathfunctions.pspherical_wave_function(l, m, k * sph[0], sph[1], sph[2], trans)
+        return values.tolist()
 
     def __add__(self, other):
         # TODO: Unit testing overload __add__ in sph_wf_symbol
         a = np.concatenate([self.a, other.a])
         l = np.concatenate([self.l, other.l])
         m = np.concatenate([self.m, other.m])
+        self._check_values()
         return sph_wf_symbol(a, l, m)
 
     __radd__ = __add__
 
     def __sub__(self, other):
-        # TODO: Unit testing overload __sub__ in sph_wf_symbol
         a = np.concatenate([self.a, -other.a])
         l = np.concatenate([self.l, other.l])
         m = np.concatenate([self.m, other.m])
+        self._check_values()
         return sph_wf_symbol(a, l, m)
 
     def __neg__(self):
-        # TODO: Unit testing overload __neg__ in sph_wf_symbol
+        self._check_values()
         return sph_wf_symbol(-self.a, self.l, self.m)
 
     def __mul__(self, other: (float, complex, int)):
-        # TODO: Unit testing overload __mul__ in sph_wf_symbol
         # if isinstance(other, (float,complex,int) ):
         a = other * self.a
         l = self.l
@@ -85,10 +95,10 @@ class sph_wf_symbol:
             m = self.m[i]
             sph = part.cart_sph_cen_coord(r)  # Can be a fictive particle that serve as origin of the frame
             values[i] = mathfunctions.pspherical_wave_function(l, m, k * sph[0], sph[1], sph[2])
-        return np.array([norm_cst, values])
+        self._check_values()
+        return [norm_cst.tolist(), values.tolist()]
 
     def _check_values(self):
-        # TODO: Unit testing check_values in sph_wf_symbol
         if not (self.a.shape == self.l.shape and self.a.shape == self.m.shape):
             print("Error: Linear combination of spherical basis function defined with arrays of different lengths")
             print(self.a.shape, self.l.shape, self.m.shape)
@@ -103,10 +113,19 @@ class sph_wf_symbol:
                 self.l[i] = 0
                 self.m[i] = 0
 
-        self.length = len(self.a)
-        pass
+        # Add up coefficients for same functions
+        for i in range(self.length):
+            for j in np.arange(i + 1, self.length):
+                if self.l[i] == self.l[j] and self.m[i] == self.m[j]:
+                    self.a[i] = self.a[i] + self.a[j]
+                    self.a[j] = 0
+        # Remove trivial comoponents
+        self.l = np.delete(self.l, np.where(self.a == 0))
+        self.m = np.delete(self.m, np.where(self.a == 0))
+        self.a = np.delete(self.a, np.where(self.a == 0))
 
-    # TODO Implement a function that reduces the representation by explicitly adding the sph_wf with same l and m
+        self.length = len(self.a)
+        return
 
     def sph_deriv(self, sph_comp: int):
         # TODO: Unit testing sph_deriv in sph_wf_symbol
@@ -117,23 +136,33 @@ class sph_wf_symbol:
         0 : dd0 = -1/k (ddz)
         +1 : ddp1 = -1/k(ddx + i ddy)"""
 
+        # print("sph_deriv_function. derivative component = ", sph_comp)
+        # self.print_values()
+        # print("#####")
         l = self.l
         m = self.m
         if sph_comp != 0:
             ss = np.sign(sph_comp)
-            self.a = np.concatenate([- ss * ((l + ss * m + 2) * (l + ss * m + 1) / ((2 * l + 1) * (2 * l + 3))) ** 0.5,
-                                     - (ss * ((l - ss * m) * (l - ss * m - 1) / (4 * l ** 2 - 1)) ** 0.5)])
-            self.l = np.concatenate([l + 1, l - 1])
-            self.m = np.concatenate([m + ss, m + ss])
+            a = np.concatenate([- ss * ((l + ss * m + 2) * (l + ss * m + 1) / ((2 * l + 1) * (2 * l + 3))) ** 0.5,
+                                - (ss * ((l - ss * m) * (l - ss * m - 1) / (4 * l ** 2 - 1)) ** 0.5)])
+            l = np.concatenate([l + 1, l - 1])
+            m = np.concatenate([m + ss, m + ss])
 
         else:
-            self.a = np.concatenate([(((l + 1) ** 2 - m ** 2) / ((2 * l + 1) * (2 * l + 3))) ** 0.5,
-                                     - ((l ** 2 - m ** 2) / (4 * l ** 2 - 1)) ** 0.5])
-            self.l = np.concatenate([l + 1, l - 1])
-            self.m = np.concatenate([m, m])
+            a = np.concatenate([(((l + 1) ** 2 - m ** 2) / ((2 * l + 1) * (2 * l + 3))) ** 0.5,
+                                - ((l ** 2 - m ** 2) / (4 * l ** 2 - 1)) ** 0.5])
+            l = np.concatenate([l + 1, l - 1])
+            m = np.concatenate([m, m])
 
         self._check_values()
-        return self
+
+        return [a, l, m]
+
+    def print_values(self, ):
+        print("spf_wf object with the coefficients : ")
+        print("a         l         m")
+        print(np.stack([self.a, self.l, self.m]).T)
+        return
 
     def cart_deriv(self, cart_comp: int):
         # TODO: Unit testing cart_deriv in sph_wf_symbol
@@ -141,41 +170,52 @@ class sph_wf_symbol:
         1/k ddx = -1/2 (ddm1 + ddp1)
         1/k ddy = 1j/2 (ddp1 - ddm1)
         1/k ddz = -dd0 """
-
+        ddout = 0
+        # print("cart_deriv function. derivative component = ", cart_comp)
+        # self.print_values()
+        # print("#####")
         if cart_comp == 0 or cart_comp == 1:
-            ddm1 = self.sph_deriv(-1)
-            ddp1 = self.sph_deriv(1)
+            ddm1 = sph_wf_symbol(*self.sph_deriv(-1))
+            ddp1 = sph_wf_symbol(*self.sph_deriv(1))
             if cart_comp != 0:
-                return 1j * 0.5 * (ddp1 - ddm1)
+                ddout = 1j * 0.5 * (ddp1 - ddm1)
             else:
-                return - 0.5 * (ddp1 + ddm1)
+                ddout = - 0.5 * (ddp1 + ddm1)
 
         elif cart_comp == 2:
-            dd0 = self.sph_deriv(0)
-            return -dd0
+            ddout = -sph_wf_symbol(*self.sph_deriv(0))
 
         else:
             print(str("Error: Unrecognized cartesian component" + str(cart_comp)))
             exit()
 
         self._check_values()
-        return self
+        # print("Out values : ")
+        # print("a        l        m")
+        # print(np.stack((ddout.a, ddout.l, ddout.m)).T)
+        return [ddout.a, ddout.l, ddout.m]
 
 
 def normalization_cst(l, k, R):
-    # TODO: Unit testing normalization_cst in sph_wf_symbol
     modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, R)
-    Rez = np.real(1 / modsqr)
-    Imz = np.imag(1 / modsqr)
-    mathfunctions.psquare_root(Rez, Imz)
-    return Rez + 1j * Imz
+    if isinstance(modsqr, np.ndarray):
+        Rez = np.real(1 / modsqr)
+        Imz = np.imag(1 / modsqr)
+        mathfunctions.psquare_root(Rez, Imz)
+        return Rez + 1j * Imz
+    else:
+        return 1 / np.sqrt(modsqr)
 
 
 def sph_wf_deriv_tensor(a, l, m):
     # TODO: Unit testing sph_wf_deriv_tensor in sph_wf_symbol
-    return [[sph_wf_symbol(a, l, m).cart_deriv(i).cart_deriv(j) for i in range(3)] for j in range(3)]
-
-
+    tsr = []
+    for i in range(3):
+        tsr2 = []
+        for j in range(3):
+            tsr2.append(sph_wf_symbol(*sph_wf_symbol(*sph_wf_symbol(a, l, m).cart_deriv(i)).cart_deriv(j)))
+        tsr.append(tsr2)
+    return tsr
 def med_sph_wf_ovlp(l, part, f):
     # TODO Unit test med_sph_wf_ovlp in sph_wf_symbol
     k = part.k(f)
@@ -203,16 +243,21 @@ def fin_rad_integ(l, part, f):
     normkb = normalization_cst(l, kb, R)
     ovlp_term = med_sph_wf_ovlp(l, part, f) / (normk * normkb)
 
-    Rez = np.real(1 / (k * kb))
-    Imz = np.imag(1 / (k * kb))
-    mathfunctions.psquare_root(Rez, Imz)
+    # Rez = np.real(1 / (k * kb))
+    # Imz = np.imag(1 / (k * kb))
+    # mathfunctions.psquare_root(Rez, Imz)
 
-    prefactor = (1j * np.pi / 2) * (Rez + Imz * 1j) / (k ** 2 - kb ** 2)
+    # prefactor = (1j * np.pi / 2) * (Rez + Imz * 1j) / (k ** 2 - kb ** 2)
+    prefactor = (1j * np.pi / 2) * (1 / np.sqrt(k * kb)) / (k ** 2 - kb ** 2)
 
-    Rez = np.real((k / kb) ** (2 * l + 1))
-    Imz = np.imag((k / kb) ** (2 * l + 1))
-    mathfunctions.psquare_root(Rez, Imz)
-    fac = Rez + Imz * 1j
+    num = (k / kb) ** (2 * l + 1)
+    if isinstance(num, np.ndarray):
+        Rez = np.real(num)
+        Imz = np.imag(num)
+        mathfunctions.psquare_root(Rez, Imz)
+        fac = Rez + Imz * 1j
+    else:
+        fac = np.sqrt(num)
 
     main_term = k * R * sp.yv(l + 0.5, kb * R) * sp.jv(l + 1.5, k * R) - kb * R * sp.jv(l + 0.5, k * R) \
                 * sp.yv(l + 1.5, kb * R) - fac * 2 / np.pi
