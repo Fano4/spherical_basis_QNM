@@ -16,11 +16,13 @@
 # We use a dimensionless unit system to simplify the problem (all constants = 1 )
 
 import numpy as np
+from functools import partial
 
 import basis_set
 import green_function
 import material
 import field
+import plot_functions
 
 # Parameters of the computation:
 import particle
@@ -29,10 +31,18 @@ lmax = 0
 wmin = 0.3
 wmax = 0.8
 
-guess_frq = 1 / 0.45
+guess_frq = 1. / 2.
+
+
+def func(sph_wf_basis, l, ml, part, f, x, z):
+    # def func(sph_wf_basis, x, z):
+    r = np.array([x, 0, z])
+    # return sph_wf_basis.part.inout(r)
+    return sph_wf_basis.basis[sph_wf_basis.jlm_to_index(0, l, ml)](r, f, part, inout='out')[1]
+
 
 # We start with the nano-particle geometry and material parameters.
-R = 1
+R = 0.025
 pos = np.array([0, 0, 0], dtype=float)
 mat_str = 'Au'
 mat = material.material('Au')
@@ -53,12 +63,23 @@ input_field = field.field(input_field_coeff, freq_cent=input_field_freq)
 
 print("Initializing the basis set")
 sph_wf_basis = basis_set.basis_set(type="spherical", lmax=lmax, part=part)
+
+print("Plotting a bunch of funtions")
+l = 1
+ml = 1
+xrange = np.linspace(-80 * R, 80 * R, 160)
+zrange = np.linspace(-80 * R, 80 * R, 160)
+X, Z = np.meshgrid(xrange, zrange)
+Y = np.zeros(X.shape)
+r = np.array([X, Y, Z])
+red_fun = partial(func, sph_wf_basis, l, ml, part, guess_frq)
+# red_fun = partial(func, sph_wf_basis)
+plot_functions.plot_2d_func(red_fun, xrange, zrange, part='real')
+
+exit()
 print("Initializing the Green's function")
 bg_green = green_function.green_function(sph_wf_basis)
 
 print("Calling Green's function")
 array = bg_green(f0)
-print("Output green function array: ")
-print(array.shape)
-
-exit()
+print("Green's function represented")

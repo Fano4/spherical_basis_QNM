@@ -22,12 +22,13 @@ class sph_wf_symbol:
         self.length = len(self.a)
         self._check_values()
 
-    def __call__(self, r: np.ndarray, f: complex, part: particle, trans=False):
+    def __call__(self, r: np.ndarray, f: complex, part: particle, **kwargs):
         k = part.k(f)
+
         if self.length == 0:
             return 0
         norm_cst = self.norm(k, part)
-        values = self.eval(r, k, part, trans)
+        values = self.eval(r, f, part, **kwargs)
         self._check_values()
         return [norm_cst, values]
 
@@ -42,14 +43,25 @@ class sph_wf_symbol:
             norm_cst[i] = 1 / np.sqrt(modsqr)  # Branch cut square root
         return norm_cst
 
-    def eval(self, r, k, part, trans=False):
+    def eval(self, r, f, part, **kwargs):
+        k = part.k(f)
+        if 'trans' in kwargs and kwargs['trans']:
+            trans = True
+        else:
+            trans = False
+
         S = part.inout(r)
         values = np.zeros(self.length, dtype=complex)
-        for i in range(self.length):
-            l = self.l[i]
-            m = self.m[i]
-            sph = part.cart_sph_cen_coord(r)
-            values[i] = S * mathfunctions.pspherical_wave_function(l, m, k * sph[0], sph[1], sph[2], trans)
+        if ('inout' not in kwargs) or kwargs['inout'] == 'in':
+            for i in range(self.length):
+                l = self.l[i]
+                m = self.m[i]
+                sph = part.cart_sph_cen_coord(r)
+                values[i] = S * mathfunctions.pspherical_wave_function(l, m, k * sph[0], sph[1], sph[2], trans)
+        elif kwargs['inout'] == 'out':
+            for i in range(self.length):
+                values[i] = (1. - S) * self.outgo_form(r, f, part.med, part)[1][i]
+
         return values.tolist()
 
     def __add__(self, other):
@@ -216,6 +228,8 @@ def sph_wf_deriv_tensor(a, l, m):
             tsr2.append(sph_wf_symbol(*sph_wf_symbol(*sph_wf_symbol(a, l, m).cart_deriv(i)).cart_deriv(j)))
         tsr.append(tsr2)
     return tsr
+
+
 def med_sph_wf_ovlp(l, part, f):
     # TODO Unit test med_sph_wf_ovlp in sph_wf_symbol
     k = part.k(f)

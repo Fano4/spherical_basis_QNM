@@ -35,7 +35,8 @@ class particle:
         return sph
 
     def inout(self, r):
-        return self.R ** 2 > (r[0] - self.pos[0]) ** 2 + (r[1] - self.pos[1]) ** 2 + (r[2] - self.pos[2]) ** 2
+
+        return float(self.R ** 2 > (r[0] - self.pos[0]) ** 2 + (r[1] - self.pos[1]) ** 2 + (r[2] - self.pos[2]) ** 2)
 
     def k(self, f):
         k = self.mat.k(f)
