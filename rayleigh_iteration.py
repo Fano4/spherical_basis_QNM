@@ -1,19 +1,24 @@
+from functools import partial
 import numpy as np
 from scipy import linalg as lg
-import math
+
+import plot_functions
 
 
 def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
-    maxit = 20
-    h = 1e-2
+    maxit = 50
+    h = 1e-3
     convergence = True
-    precision = 1e-8
-
+    precision = 1e-10
+    ztab = []
+    xtab = []
+    ytab = []
     # Enter optimization
     while convergence:
         print("Entering eigenvalue search")
         norm_Ax = 1
         conv_energy = 1
+        converged = False
         x = x0 / lg.norm(x0)
         y = np.conj(x)
         z = z0
@@ -22,73 +27,78 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
         for ite in range(maxit):
             print("#############################")
             print("Iteration", ite)
+
             mat_z = A(z)
-            print("Matrix at point z: ")
-            print(mat_z)
+
+            if len(ztab) != 0:
+                print("Matrix deflation : ", len(ztab), " eigenvalues")
+                mat_z = A(z)
+                for i in range(len(ztab)):
+                    mat_z = mat_z - ztab[i] / (z - ztab[i] + 1e-10) * np.outer(xtab[i], ytab[i])
+
             dmat_z = finite_diff(A, z, h, degree=4)
-            print("Matrix derivative at point z: ")
-            print(dmat_z)
-            print("Vector :")
-            print(x)
             norm_Ax = lg.norm(np.matmul(mat_z, x))
-            print('norm_Ax')
+            print('norm_Ax : ', end='')
             print(norm_Ax)
+            if lg.det(mat_z) != 0:
+                vkp1 = lg.solve(np.conj(mat_z), np.matmul(np.conj(dmat_z), y))
+                ukp1 = lg.solve(mat_z, np.matmul(dmat_z, x))
 
-            conv_energy = np.abs(z - zm1) / np.abs(z)
-            print('conv_energy')
-            print(conv_energy)
+                xm1 = x
+                x = ukp1 / lg.norm(ukp1)
+                y = vkp1 / lg.norm(vkp1)
 
-            vkp1 = lg.solve(np.conj(mat_z), np.matmul(np.conj(dmat_z), y))
-            print('vkp1')
-            print(vkp1)
-            ukp1 = lg.solve(mat_z, np.matmul(dmat_z, x))
-            print('ukp1')
-            print(ukp1)
+                vec_conv = lg.norm(x - xm1)
+                if vec_conv > lg.norm(x + xm1) and lg.norm(x + xm1) < 0.1:
+                    print("Iverting eigenvector to reduce phase jump")
+                    print(lg.norm(x - xm1), " > ", lg.norm(x + xm1))
+                    print(xm1)
+                    print("===>")
+                    print(x)
+                    vec_conv = lg.norm(x + xm1)
+                    x = -x
+                    z = -z
+                rhok = np.matmul(y.T, np.matmul(mat_z, x)) / np.matmul(y.T, np.matmul(dmat_z, x))
 
-            zm1 = z
+                print("Initial_energy: ", end='')
+                print(z)
+                z = z - rhok
+                print('energy change: ', end='')
+                print(-rhok, end='     ')
+                print("Energy val :")
+                print(z)
 
-            xm1 = x
-            x = ukp1 / lg.norm(ukp1)
-            y = vkp1 / lg.norm(vkp1)
-            print('x')
-            print(x)
-            print('y')
-            print(y)
-
-            vec_conv = lg.norm(x - xm1)
-            if vec_conv > lg.norm(x + xm1):
-                vec_conv = lg.norm(x + xm1)
-                x = -x
-                z = -z
-            print('vec_conv')
-            print(vec_conv)
-
-            rhok = np.matmul(y.T, np.matmul(mat_z, x)) / np.matmul(y.T, np.matmul(dmat_z, x))
-            print('rhok')
-            print(rhok)
-
-            z = z - rhok
-            print("Energy : ", z)
-            print("vector convergence : ", vec_conv)
-            print(x)
-
-            if (norm_Ax < precision and vec_conv < precision) or (conv_energy < precision and vec_conv < precision):
-                return [z, x, y]
+            if (norm_Ax < precision and abs(rhok) < precision):
+                print("Iteration converged:")
+                print("    Energy: ", end='')
+                print(abs(rhok))
+                print("    matrix-vector norm: ", end='')
+                print(norm_Ax)
+                print("Eigenvalue found:")
+                print(z)
+                print("Eigenvector found:")
+                print(x)
+                ztab.append(z)
+                xtab.append(x)
+                ytab.append(y)
+                converged = True
+                break
 
             elif np.isnan(z):
                 raise ValueError("Undefined value of z. Terminating")
 
-        convergence = False
-        print("The Nonlinear eigenvalue problem did not converge. ")
-        print("Convergence at termination:")
-        print("    Energy: ", end='')
-        print(norm_Ax)
-        print("    Eigenvector norm: ", end='')
-        print(conv_energy)
-        print("Eigenvalues at termination:")
-        print(z)
+        if not converged:
+            print("The Nonlinear eigenvalue problem did not converge. ")
+            print("Convergence at termination:")
+            print("    Energy: ", end='')
+            print(abs(rhok))
+            print("    matrix-vector norm: ", end='')
+            print(norm_Ax)
+            print("Eigenvalues at termination:")
+            print(z)
+            convergence = False
 
-    return []
+    return [ztab, xtab]
 
 
 def finite_diff(*args, **kwargs):
@@ -137,3 +147,18 @@ def finite_diff_coeff(order, degree):
         return coeff[int(order - 1)][int(degree / 2 - 1)]
     else:
         raise ValueError('Invalid degree for finite difference. Only even degree is authorized')
+
+
+def pseudo_spectrum(A: callable, vmax: float):
+    y = np.linspace(-2., 2., 100)
+    x = np.linspace(-vmax, vmax, 1000)
+    func_to_plot = partial(inv_det_norm, A)
+    plot_functions.plot_2d_func(func_to_plot, x, y, part='real')
+    # plot_functions.plot_func(func_to_plot,x)
+
+
+def inv_det_norm(A, x, y):
+    num = lg.det(A(x + y * 1j))
+    # if num < 1e-4:
+    #    num = 1
+    return 1 / (num + 1e-6)

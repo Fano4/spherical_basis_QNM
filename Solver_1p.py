@@ -22,10 +22,12 @@ import basis_set
 import green_function
 import material
 import field
+import particle
+import rayleigh_iteration as rit
 import plot_functions
 
 # Parameters of the computation:
-import particle
+
 
 lmax = 2
 wmin = 0.3
@@ -101,9 +103,9 @@ r = np.array([X, Y, Z])
 #        arr = sph_wf_basis.basis_separation_mat[i][j].sph_basis_proj(sph_wf_basis,guess_frq)
 #        print(i,j)
 #        print(arr)
-print("Initializing the Green's function")
-bg_green = green_function.green_function(sph_wf_basis)
+# print("Initializing the Green's function")
+# bg_green = green_function.green_function(sph_wf_basis)
 
-print("Calling Green's function")
-array = bg_green(f0)
-print("Green's function represented")
+# print("Calling Green's function")
+# array = bg_green(f0)
+# print("Green's function represented")
