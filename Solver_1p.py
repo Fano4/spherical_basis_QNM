@@ -27,7 +27,7 @@ import plot_functions
 # Parameters of the computation:
 import particle
 
-lmax = 0
+lmax = 2
 wmin = 0.3
 wmax = 0.8
 
@@ -38,7 +38,22 @@ def func(sph_wf_basis, l, ml, part, f, x, z):
     # def func(sph_wf_basis, x, z):
     r = np.array([x, 0, z])
     # return sph_wf_basis.part.inout(r)
-    return sph_wf_basis.basis[sph_wf_basis.jlm_to_index(0, l, ml)](r, f, part, inout='out')[1]
+    return sph_wf_basis.basis[sph_wf_basis.jlm_to_index(0, l, ml)](r, f, part, inout='in')[1]
+
+
+def func_hess(sph_wf_basis, comp_1, comp_2, l, ml, part, f, x, z):
+    # def func(sph_wf_basis, x, z):
+    r = np.array([x, 0, z])
+    # return sph_wf_basis.part.inout(r)
+    return sph_wf_basis.basis_hessian[sph_wf_basis.jlm_to_index(0, l, ml)][comp_1][comp_2](r, f, part, inout='in')[1]
+
+
+def diagonal_term(part, sph_wf_basis, f):
+    return np.eye(sph_wf_basis.size_ini) * (2 * (part.mat.eps(f) - part.med.eps(f)) / 3)
+
+
+def greens_term(bg_green, part, f):
+    return part.med.k(f) ** 2 * part.mat.eps(f) * bg_green
 
 
 # We start with the nano-particle geometry and material parameters.
@@ -64,19 +79,28 @@ input_field = field.field(input_field_coeff, freq_cent=input_field_freq)
 print("Initializing the basis set")
 sph_wf_basis = basis_set.basis_set(type="spherical", lmax=lmax, part=part)
 
-print("Plotting a bunch of funtions")
-l = 1
-ml = 1
-xrange = np.linspace(-80 * R, 80 * R, 160)
-zrange = np.linspace(-80 * R, 80 * R, 160)
+l = 0
+ml = 0
+xrange = np.linspace(- R, R, 160)
+zrange = np.linspace(- R, R, 160)
 X, Z = np.meshgrid(xrange, zrange)
 Y = np.zeros(X.shape)
 r = np.array([X, Y, Z])
-red_fun = partial(func, sph_wf_basis, l, ml, part, guess_frq)
-# red_fun = partial(func, sph_wf_basis)
-plot_functions.plot_2d_func(red_fun, xrange, zrange, part='real')
 
-exit()
+# print("Plotting a spherical wave function")
+# red_fun = partial(func, sph_wf_basis, l, ml, part, guess_frq)
+# plot_functions.plot_2d_func(red_fun, xrange, zrange, part='real')
+
+# print("Plotting a spherical wave function Hessian component")
+# red_fun = partial(func_hess, sph_wf_basis, 0, 0, l, ml, part, guess_frq)
+# plot_functions.plot_2d_func(red_fun, xrange, zrange, part='real')
+
+# print("Printing separation matrix projection")
+# for i in range(sph_wf_basis.size):
+#    for j in range(sph_wf_basis.size):
+#        arr = sph_wf_basis.basis_separation_mat[i][j].sph_basis_proj(sph_wf_basis,guess_frq)
+#        print(i,j)
+#        print(arr)
 print("Initializing the Green's function")
 bg_green = green_function.green_function(sph_wf_basis)
 

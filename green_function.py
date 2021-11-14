@@ -19,7 +19,7 @@ class green_function:
         # TODO: Unit test Green's function constructor
         # The green's function depends on the geometry of the system and is decomposed in a bsis set.
         self.basis_set = basis_set
-        self.rank = basis_set.size
+        self.rank = basis_set.size_ini
 
         self.self_terms = (lg.norm(np.array(basis_set.distance_mat), axis=2) == 0).tolist()
         # The Green's function has two types of terms. The self (single-particle) terms and the scattering terms.

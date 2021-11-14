@@ -24,6 +24,7 @@ class basis_set:
             if self.bas_func == 'spherical':
                 # Initialize spherical basis functions
 
+                self.sized = False
                 self.lmax_ini = kwargs['lmax']
                 self.lmax = self.lmax_ini
 
@@ -50,6 +51,8 @@ class basis_set:
 
                 self.n_sph_harm = (self.lmax + 1) ** 2
                 self.size = self.npart * self.n_sph_harm
+                self.sized = True
+
                 # The basis set is a list of single spherical wave function symbols spanning all the particles
                 self.basis = [swf.sph_wf_symbol(1, self.jlm_to_index(i)[1], self.jlm_to_index(i)[2])
                               for i in range(self.size)]
@@ -113,12 +116,21 @@ class basis_set:
 
     def jlm_to_index(self, *args):
         # TODO: Unit testing jlm_to_index in basis_set
+        if self.sized:
+            size = self.size
+        else:
+            size = self.size_ini
+
         if len(args) == 3:
-            if abs(args[2]) > args[1]:
+            if args[1] > self.lmax or args[0] > self.npart:
+                raise ValueError("l or particle Index out of range")
+            elif abs(args[2]) > args[1]:
                 raise ValueError("|m| > l")
             else:
                 return args[0] * (self.lmax + 1) ** 2 + (args[1]) ** 2 + args[1] + args[2]
         elif len(args) == 1:
+            if args[0] > size:
+                raise ValueError("Index out of range")
             j = args[0] // (self.lmax + 1) ** 2
             a = args[0] - j * (self.lmax + 1) ** 2
             l = int(np.floor(a ** 0.5))

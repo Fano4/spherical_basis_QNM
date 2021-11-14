@@ -13,7 +13,7 @@ import spherical_wave_function as swf
 import mathfunctions
 import particle
 import numpy as np
-
+import warnings
 '''
 def list_app(func):
     def wrapper(*args):
@@ -57,6 +57,9 @@ class separation_matrix(swf.sph_wf_symbol):
             m = 0
             p = 0
             t = 0
+        if isinstance(n, np.ndarray) and len(n) == 1:
+            n = n[0]
+            m = m[0]
 
         q0 = self.set_q0(p, t, n, m)
         bigq = self.set_bigq(p, n, q0)
@@ -71,10 +74,13 @@ class separation_matrix(swf.sph_wf_symbol):
             raise ValueError("Invalid bigq value!!! Find out how this happened")
 
         for q in range(int(bigq + 1)):
-            gaunt_symbol_vec = np.array([p, t, n, -m, q0 + 2 * q])
-            a[q] = a0 * prefactor * (-1) ** q * mathfunctions.pgaunt_coeff(gaunt_symbol_vec[0], gaunt_symbol_vec[1],
-                                                                           gaunt_symbol_vec[2],
-                                                                           gaunt_symbol_vec[3], gaunt_symbol_vec[4])
+            try:
+                gaunt_symbol_vec = np.array([p, t, n, -m, q0 + 2 * q])
+                a[q] = a0 * prefactor * (-1) ** q * mathfunctions.pgaunt_coeff(gaunt_symbol_vec[0], gaunt_symbol_vec[1],
+                                                                               gaunt_symbol_vec[2],
+                                                                               gaunt_symbol_vec[3], gaunt_symbol_vec[4])
+            except:
+                raise RuntimeError("Error during Gaunt symbol evaluation")
             l[q] = q0 + 2 * q
             ml[q] = t - m
 
@@ -96,7 +102,7 @@ class separation_matrix(swf.sph_wf_symbol):
                                       particle.particle(origin, 0, kwargs['medium']))
                 return np.sum(val[0] * val[1])
             else:
-                val = super().__call__(kwargs['r'], kwargs['f'], kwargs['particle'])[1]
+                val = super().__call__(kwargs['r'], kwargs['f'], kwargs['particle'])
                 return np.sum(val[1])
 
         except KeyError:
