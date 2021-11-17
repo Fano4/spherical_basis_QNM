@@ -15,6 +15,11 @@ def eps_drude(fp, gam, f):
     return eps
 
 
+def eps_logistic_fun(deps, fl, gaml, f):
+    f = f * hz_um_scale
+    return 1j * deps / (1 + np.exp(-(f - fl) / gaml))
+
+
 # def eps_lorentz(deps, fl, gaml, f):
 #    f = f * hz_um_scale
 #    return - deps * fl ** 2 / (f ** 2 - fl ** 2 + 1j * gaml * f)
@@ -36,11 +41,11 @@ class material:
                 'wp': 2.187843711327759e15,
                 'gam': 1.7483323775316169e13
             }
-        #            self.lorentz_param = {
-        #                'deps': 2.07122,
-        #                'wp': 4.66171e15,
-        #                'gam': 7.20958e13
-        #            }
+            self.lorentz_param = {
+                'deps': 5.6,
+                'wp': 5.8031744e14,
+                'gam': 4.110582e13
+            }
         else:
             print("Error: Unknown material")
         pass
@@ -48,8 +53,8 @@ class material:
     def eps(self, f):
         # TODO unit testing (Against data ? Find the data)
         if len(self.drude_param) != 0:
-            return self.epsinf + eps_drude(self.drude_param['wp'], self.drude_param['gam'], f)
-        #                   + eps_lorentz(self.lorentz_param['deps'], self.lorentz_param['wp'], self.lorentz_param['gam'], f)
+            return self.epsinf + eps_drude(self.drude_param['wp'], self.drude_param['gam'], f) \
+                   + eps_logistic_fun(self.lorentz_param['deps'], self.lorentz_param['wp'], self.lorentz_param['gam'], f)
         else:
             return self.epsval
 
@@ -64,7 +69,7 @@ class material:
             mathfunctions.psquare_root(Rez, Imz)
             return Rez + 1j * Imz
         else:
-            return float(Rez) + 1j * float(Imz)
+            return np.sqrt(float(Rez) + 1j * float(Imz))
 
     def k(self, f):
         n = self.n(f)

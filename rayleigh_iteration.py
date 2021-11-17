@@ -6,8 +6,9 @@ import plot_functions
 
 
 def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
-    maxit = 50
-    h = 1e-3
+    maxit = 30
+    h = 5e-4
+    maxrad = 3.
     convergence = True
     precision = 1e-10
     ztab = []
@@ -23,12 +24,17 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
         y = np.conj(x)
         z = z0
         zm1 = 0
+        looping = 0
+        bas_fun_index = 0
 
-        for ite in range(maxit):
+        for ite in range(maxit * len(x)):
             print("#############################")
             print("Iteration", ite)
 
             mat_z = A(z)
+
+            if looping > 0:
+                looping = looping - 1
 
             if len(ztab) != 0:
                 print("Matrix deflation : ", len(ztab), " eigenvalues")
@@ -57,7 +63,7 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                     print(x)
                     vec_conv = lg.norm(x + xm1)
                     x = -x
-                    z = -z
+                    y = -y
                 rhok = np.matmul(y.T, np.matmul(mat_z, x)) / np.matmul(y.T, np.matmul(dmat_z, x))
 
                 print("Initial_energy: ", end='')
@@ -84,6 +90,36 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                 converged = True
                 break
 
+            elif np.abs(z - z0) > maxrad:
+                print("Getting out of the research zone.")
+                # Reset the energy to the initial energy
+                bas_fun_index = bas_fun_index + 1
+                z = z0
+                if bas_fun_index >= len(x):
+                    converged = False
+                    "Functional space maximally expanded: Termination"
+                    break
+                # Redefine the initial vector using a different basis function
+                # x = np.zeros(len(x0), dtype=complex)
+                x[bas_fun_index] = 1
+                x = x / lg.norm(x)
+                y = np.conj(x)
+
+                if looping >= 3:
+                    converged = False
+                    "Looping through getting out the research zone"
+                    break
+                looping = looping + 2
+            elif ite % maxit == 0 and ite != 0:
+                print("Expanding functional space")
+                bas_fun_index = bas_fun_index + 1
+                if bas_fun_index >= len(x):
+                    "Functional space maximally expanded"
+                    pass
+                z = z0
+                x[bas_fun_index] = 1
+                x = x / lg.norm(x)
+                y = np.conj(x)
             elif np.isnan(z):
                 raise ValueError("Undefined value of z. Terminating")
 
@@ -94,7 +130,7 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
             print(abs(rhok))
             print("    matrix-vector norm: ", end='')
             print(norm_Ax)
-            print("Eigenvalues at termination:")
+            print("Energy value at termination:")
             print(z)
             convergence = False
 
@@ -150,9 +186,9 @@ def finite_diff_coeff(order, degree):
 
 
 def pseudo_spectrum(A: callable, vmax: float):
-    y = np.linspace(-2., 2., 100)
-    x = np.linspace(-vmax, vmax, 1000)
-    func_to_plot = partial(inv_det_norm, A)
+    y = np.linspace(0, 0.15, 30)
+    x = np.linspace(1 / 1.2, 1 / .3, 150)
+    func_to_plot = partial(abs_det_norm, A)
     plot_functions.plot_2d_func(func_to_plot, x, y, part='real')
     # plot_functions.plot_func(func_to_plot,x)
 
@@ -162,3 +198,10 @@ def inv_det_norm(A, x, y):
     # if num < 1e-4:
     #    num = 1
     return 1 / (num + 1e-6)
+
+
+def abs_det_norm(A, x, y):
+    num = np.abs(lg.det(A(x + y * 1j)))
+    # if num < 1e-4:
+    #    num = 1
+    return num

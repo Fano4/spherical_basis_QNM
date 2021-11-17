@@ -99,7 +99,7 @@ class sph_wf_symbol:
 
     def outgo_form(self, r: np.ndarray, f: complex, medium: material, part: particle):
         # TODO: Unit testing outgoing form in sph_wf_symbol
-        k = medium.k(f)
+        k = medium.k(np.real(f))
         values = np.zeros(self.length, dtype=complex)
         norm_cst = np.ones(self.length, dtype=complex)
         for i in range(self.length):

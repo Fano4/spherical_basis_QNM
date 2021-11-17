@@ -2,16 +2,18 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
 from matplotlib.ticker import MaxNLocator
 import numpy as np
+from tqdm import tqdm
 
 
 def plot_func(func_to_plot, x):
     f = np.zeros(x.shape, dtype=complex)
-    for i in range(len(x)):
+    for i in tqdm(range(len(x))):
         f[i] = func_to_plot(x[i])
-    plt.plot(x, np.real(f))
-    plt.plot(x, np.imag(f))
-    plt.xlabel("x")
+    plt.plot(x * 1.23984193, np.real(f), label="Real part")
+    plt.plot(x * 1.23984193, np.imag(f), label="Imaginary part")
+    plt.xlabel("x", )
     plt.ylabel("y")
+    plt.legend()
     plt.show()
     return 0
 
@@ -22,7 +24,7 @@ def plot_2d_func(func_to_plot, x, y, **kwargs):
     ReZ = np.zeros(X.shape)
     ImZ = np.zeros(X.shape)
 
-    for i in range(len(x)):
+    for i in tqdm(range(len(x))):
         for j in range(len(y)):
             out = func_to_plot(x[i], y[j])
             if isinstance(out, list):
@@ -33,7 +35,16 @@ def plot_2d_func(func_to_plot, x, y, **kwargs):
                 ImZ[j, i] = np.imag(out)
 
     Z = ReZ + 1j * ImZ
-    levels = MaxNLocator(nbins=15).tick_values(-abs(Z).max(), abs(Z).max())
+
+    Xp = X.reshape(len(x) * len(y))
+    Yp = Y.reshape(len(x) * len(y))
+    Zp = Z.reshape(len(x) * len(y))
+
+    sav = np.array([Xp, Yp, Zp]).T
+    np.savetxt("pseudo_spectrum.txt", sav)
+
+    lim = abs(Z).max()
+    levels = MaxNLocator(nbins=100).tick_values(-lim, lim)
 
     # pick the desired colormap, sensible levels, and define a normalization
     # instance which takes data values and translates those into levels.
