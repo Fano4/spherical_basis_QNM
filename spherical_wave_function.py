@@ -1,3 +1,4 @@
+import mpmath
 import numpy as np
 import material
 import particle
@@ -207,6 +208,18 @@ class sph_wf_symbol:
         # print(np.stack((ddout.a, ddout.l, ddout.m)).T)
         return [ddout.a, ddout.l, ddout.m]
 
+    def integral(self, k, r):
+        vec = np.zeros(self.length, dtype=complex)
+        for i in range(self.length):
+            hyperg = mpmath.hyper([(3 + self.l[i]) / 2], [3 / 2 + self.l[i], (5 + self.l[i]) / 2],
+                                  -0.25 * k ** 2 * r ** 2)
+            float_hyperg = float(mpmath.nstr(hyperg.real, 6)) + 1j * float(mpmath.nstr(hyperg.imag, 6))
+            vec[i] = 0.5 ** (2 + self.l[i]) * np.pi ** 0.5 * r ** 3 * (k * r) ** self.l[i] * sp.gamma(
+                (3 + self.l[i]) / 2) \
+                     * float_hyperg
+
+        return np.sum(self.a * vec)
+
 
 def normalization_cst(l, k, R):
     modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, R)
@@ -239,6 +252,19 @@ def med_sph_wf_ovlp(l, part, f):
     normkb = normalization_cst(l, kb, R)
     prefac = normk * normkb
     ovlp = prefac * mathfunctions.psph_Bessel_ovlp(l, k, kb, R)
+
+    return ovlp
+
+
+def sph_wf_ovlp(l, part, f1, f2):
+    # TODO Unit test med_sph_wf_ovlp in sph_wf_symbol
+    k1 = part.k(f1)
+    k2 = part.k(f2)
+    R = part.R
+    normk = normalization_cst(l, k1, R)
+    normkb = normalization_cst(l, k2, R)
+    prefac = normk * normkb
+    ovlp = prefac * mathfunctions.psph_Bessel_ovlp(l, k1, k2, R)
 
     return ovlp
 

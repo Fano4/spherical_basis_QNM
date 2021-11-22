@@ -6,7 +6,7 @@ import plot_functions
 
 
 def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
-    maxit = 30
+    maxit = 60
     h = 5e-4
     maxrad = 3.
     convergence = True
@@ -56,12 +56,11 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
 
                 vec_conv = lg.norm(x - xm1)
                 if vec_conv > lg.norm(x + xm1) and lg.norm(x + xm1) < 0.1:
-                    print("Iverting eigenvector to reduce phase jump")
+                    print("Inverting eigenvector to reduce phase jump")
                     print(lg.norm(x - xm1), " > ", lg.norm(x + xm1))
                     print(xm1)
                     print("===>")
                     print(x)
-                    vec_conv = lg.norm(x + xm1)
                     x = -x
                     y = -y
                 rhok = np.matmul(y.T, np.matmul(mat_z, x)) / np.matmul(y.T, np.matmul(dmat_z, x))
@@ -70,7 +69,7 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                 print(z)
                 z = z - rhok
                 print('energy change: ', end='')
-                print(-rhok, end='     ')
+                print(-rhok)
                 print("Energy val :")
                 print(z)
 
@@ -96,14 +95,13 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                 bas_fun_index = bas_fun_index + 1
                 z = z0
                 if bas_fun_index >= len(x):
-                    converged = False
-                    "Functional space maximally expanded: Termination"
-                    break
-                # Redefine the initial vector using a different basis function
-                # x = np.zeros(len(x0), dtype=complex)
-                x[bas_fun_index] = 1
-                x = x / lg.norm(x)
-                y = np.conj(x)
+                    print("Functional space maximally expanded")
+                else:
+                    # Redefine the initial vector using a different basis function
+                    # x = np.zeros(len(x0), dtype=complex)
+                    x[bas_fun_index] = 1
+                    x = x / lg.norm(x)
+                    y = np.conj(x)
 
                 if looping >= 3:
                     converged = False
@@ -114,12 +112,12 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                 print("Expanding functional space")
                 bas_fun_index = bas_fun_index + 1
                 if bas_fun_index >= len(x):
-                    "Functional space maximally expanded"
-                    pass
-                z = z0
-                x[bas_fun_index] = 1
-                x = x / lg.norm(x)
-                y = np.conj(x)
+                    print("Functional space maximally expanded")
+                else:
+                    x[bas_fun_index] = 1
+                    x = x / lg.norm(x)
+                    y = np.conj(x)
+                # z = z0
             elif np.isnan(z):
                 raise ValueError("Undefined value of z. Terminating")
 

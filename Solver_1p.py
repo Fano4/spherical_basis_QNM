@@ -17,19 +17,21 @@
 
 import numpy as np
 from functools import partial
+import pickle
 
 import basis_set
 import green_function
 import material
-import field
 import particle
+import qnm_basis
 import rayleigh_iteration as rit
 import plot_functions
+import qnm_basis as qnm
 
 # Parameters of the computation:
 
 
-lmax = 1
+lmax = 0
 wmin = 0.3
 wmax = 0.8
 
@@ -104,9 +106,9 @@ Y = np.zeros(X.shape)
 r = np.array([X, Y, Z])
 
 print("Plotting a spherical wave function")
-red_fun = partial(func, sph_wf_basis, l, ml, part, f0)
-plot_functions.plot_2d_func(red_fun, xrange, zrange)
-exit()
+# red_fun = partial(func, sph_wf_basis, l, ml, part, f0)
+# plot_functions.plot_2d_func(red_fun, xrange, zrange)
+# exit()
 # print("Plotting a spherical wave function Hessian component")
 # red_fun = partial(func_hess, sph_wf_basis, 0, 0, l, ml, part, guess_frq)
 # plot_functions.plot_2d_func(red_fun, xrange, zrange, part='real')
@@ -132,10 +134,17 @@ reduced_nep = partial(nep_matrix, part, sph_wf_basis, bg_green)
 
 x0 = np.zeros(3 * sph_wf_basis.size_ini, dtype=complex)
 x0[0] = 1.
-z0 = 1 / 0.5 + 0.05 * 1j
+z0 = 1 / 0.7 - 0.005 * 1j
 eigen = rit.rayleigh_nep_solver(reduced_nep, x0, z0)
 eige = eigen[0]
 eigv = eigen[1]
 
-print(eige)
-print(eigv)
+eige = np.array(eige)
+eigv = np.concatenate(eigv, axis=0)
+
+basis = qnm_basis.qnm_basis(sph_wf_basis, eigv, eige)
+
+filename = 'qnm_test_r_005_0.pkl'
+filehandler = open(filename, 'wb')
+pickle.dump(basis, filehandler)
+exit()

@@ -147,6 +147,21 @@ class basis_set:
             return [swf.med_sph_wf_ovlp(self.basis[i].l, self.part, f)
                     for i in range(self.size)]
 
+    def overlap_matrix(self, f1, f2, eps_i=1):
+        ovlp = np.zeros((self.size, self.size), dtype=complex)
+        if isinstance(self.part, list):
+            for i in range(self.size):
+                for j in range(self.size):
+                    if self.basis[i].l == self.basis[j].l and self.basis[i].m == self.basis[j].m:
+                        ovlp[i, j] = eps_i * swf.sph_wf_ovlp(self.basis[i].l, self.part[self.jlm_to_index(i)[0]], f1,
+                                                             f2)
+        else:
+            for i in range(self.size):
+                for j in range(self.size):
+                    if self.basis[i].l == self.basis[j].l and self.basis[i].m == self.basis[j].m:
+                        ovlp[i, j] = eps_i * swf.sph_wf_ovlp(self.basis[i].l, self.part, f1, f2)
+        return ovlp
+
     def sph_wf_norm(self, functype, f):
         # TODO: Unit testing sph_wf_norm in basis_set
         if functype == 'mat':
@@ -173,3 +188,12 @@ class basis_set:
                         for i in range(self.size)]
         else:
             raise ValueError('Unrecognized normalization type. Support types are \'mat\' and \'background\' ')
+
+    def basis_fun_integral(self, f):
+        k = self.part.k(f)
+        r = self.part.R
+        value = np.zeros(self.size_ini, dtype=complex)
+        for i in range(self.size_ini):
+            value[i] = self.basis[i].integral(k, r)
+
+        return value

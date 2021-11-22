@@ -67,7 +67,7 @@ class green_function:
             raise TypeError("Unsupported basis set type!")
 
 
-def self_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f):
+def self_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f, verbose=False):
     # TODO: Unit test self_block_spherical basis in green's function
     # Eqs. (14), (18) and (20) in Ref. 1
     kb = basis_set.part.med.k(f)
@@ -143,7 +143,10 @@ def self_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f):
                for i in range(0, 3)] for j in range(0, 3)]
 
     val = (np.array(term_a) - np.array(term_b)).tolist()
-    return val
+    if verbose:
+        return [val, term_a, term_b]
+    else:
+        return val
 
 
 def scattering_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f):
@@ -202,3 +205,4 @@ def check_aml_list(a, l, m):
                     m[i][j][k] = 0
 
     return [a, l, m]
+
