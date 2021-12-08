@@ -32,9 +32,9 @@ def pYlm(l, m, thet, phi):
 
 def pspherical_wave_function(l: int, m: int, z, thet, phi, trans: bool = False) -> complex:
     if trans:
-        return sp.spherical_jn(l, z) * (-1)**m * pYlm(l, -m, thet, phi)
+        return sp.spherical_jn(l, z) * (-1) ** m * sp.sph_harm(-m, l, thet, phi)
     else:
-        return sp.spherical_jn(l,z) * pYlm(l,m,thet,phi)
+        return sp.spherical_jn(l, z) * sp.sph_harm(m, l, thet, phi)  # * pYlm(l,m,thet,phi)
 
 def poutgo_spherical_wave_function(l: int, m: int, z: complex, thet: double, phi: double, trans: bool = False)-> complex:
     if trans:

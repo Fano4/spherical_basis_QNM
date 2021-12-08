@@ -31,15 +31,72 @@ def sph_wf_wrapper(l, f, part, r, **kwargs):
         return fun
 
 
+def test_check_values():
+    # Check that the routine removes the zeros
+    a = np.array([1., 0., 2., 0.])
+    l = np.array([0, 1, 2, 3])
+    ml = np.array([0, -1, 2, -2])
+
+    refa = np.array([1., 2.])
+    refl = np.array([0, 2])
+    refml = np.array([0, 2])
+    ref = [refa, refl, refml]
+    val = swf.check_values(a, l, ml)
+    assert (val[0] == ref[0]).all() and (val[1] == ref[1]).all() and (val[2] == ref[2]).all()
+
+    # Check that the routine removes the invalid functions
+    a = np.array([1., 2.5, 2.])
+    l = np.array([1, -1, 2])
+    ml = np.array([-1, 0, -4])
+
+    refa = np.array([1.])
+    refl = np.array([1])
+    refml = np.array([-1])
+    ref = [refa, refl, refml]
+    val = swf.check_values(a, l, ml)
+    assert (val[0] == ref[0]).all() and (val[1] == ref[1]).all() and (val[2] == ref[2]).all()
+
+    # Check that the routine adds up identical functions
+    a = np.array([1., 1., 1., 1.])
+    l = np.array([0, 1, 1, 1])
+    ml = np.array([0, -1, -1, -1])
+
+    refa = np.array([1., 3.])
+    refl = np.array([0, 1])
+    refml = np.array([0, -1])
+    ref = [refa, refl, refml]
+    val = swf.check_values(a, l, ml)
+    assert (val[0] == ref[0]).all() and (val[1] == ref[1]).all() and (val[2] == ref[2]).all()
+
+
 def test_init():
     a = np.linspace(0, 2, 10) + 0.3j
     l = np.arange(0, 10)
     m = np.arange(-5, 5)
+    checkval = swf.check_values(a, l, m)
     c = swf.sph_wf_symbol(a, l, m)
 
-    assert (np.array_equal(c.a, a))
-    assert (np.array_equal(c.l, l))
-    assert (np.array_equal(c.m, m))
+    assert (np.array_equal(c.a, checkval[0]))
+    assert (np.array_equal(c.l, checkval[1]))
+    assert (np.array_equal(c.m, checkval[2]))
+
+
+def test_reset():
+    a = np.array([1., 0., 2., 0.])
+    l = np.array([0, 1, 2, 3])
+    ml = np.array([0, -1, 2, -2])
+
+    c = swf.sph_wf_symbol(a, l, ml)
+
+    a = np.array([1., 2.5, 2.])
+    l = np.array([1, -1, 2])
+    ml = np.array([-1, 0, -4])
+    checkval = swf.check_values(a, l, ml)
+    c.reset(a, l, ml)
+
+    assert (np.array_equal(c.a, checkval[0]))
+    assert (np.array_equal(c.l, checkval[1]))
+    assert (np.array_equal(c.m, checkval[2]))
 
 
 # Call on spherical wave functions are complicated to test, as they have analytical values that can only be computed

@@ -128,13 +128,13 @@ print("Green's function represented")
 
 reduced_nep = partial(nep_matrix, part, sph_wf_basis, bg_green)
 
-# rit.pseudo_spectrum(reduced_nep,10)
+# rit.pseudo_spectrum(reduced_nep)
 
-# exit()
+exit()
 
 x0 = np.zeros(3 * sph_wf_basis.size_ini, dtype=complex)
 x0[0] = 1.
-z0 = 1 / 0.7 - 0.005 * 1j
+z0 = 1 / 0.6 + 0.05 * 1j
 eigen = rit.rayleigh_nep_solver(reduced_nep, x0, z0)
 eige = eigen[0]
 eigv = eigen[1]

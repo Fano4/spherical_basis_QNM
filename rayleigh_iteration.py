@@ -6,11 +6,13 @@ import plot_functions
 
 
 def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
-    maxit = 60
-    h = 5e-4
-    maxrad = 3.
+    maxit = 150
+    h_coarse = 1e-3
+    h_prec = 1e-6
+    h = h_coarse
+    maxrad = 0.5
     convergence = True
-    precision = 1e-10
+    precision = 1e-3
     ztab = []
     xtab = []
     ytab = []
@@ -18,12 +20,10 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
     while convergence:
         print("Entering eigenvalue search")
         norm_Ax = 1
-        conv_energy = 1
         converged = False
         x = x0 / lg.norm(x0)
         y = np.conj(x)
         z = z0
-        zm1 = 0
         looping = 0
         bas_fun_index = 0
 
@@ -40,40 +40,53 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                 print("Matrix deflation : ", len(ztab), " eigenvalues")
                 mat_z = A(z)
                 for i in range(len(ztab)):
-                    mat_z = mat_z - ztab[i] / (z - ztab[i] + 1e-10) * np.outer(xtab[i], ytab[i])
+                    mat_z = mat_z - 1 / (z - ztab[i] + 1e-15) * np.outer(xtab[i], ytab[i])
 
             dmat_z = finite_diff(A, z, h, degree=4)
+            mem = norm_Ax
             norm_Ax = lg.norm(np.matmul(mat_z, x))
             print('norm_Ax : ', end='')
             print(norm_Ax)
-            if lg.det(mat_z) != 0:
-                vkp1 = lg.solve(np.conj(mat_z), np.matmul(np.conj(dmat_z), y))
-                ukp1 = lg.solve(mat_z, np.matmul(dmat_z, x))
+            # if lg.det(mat_z) != 0:
+            vkp1 = lg.solve(np.conj(mat_z), np.matmul(np.conj(dmat_z), y))
+            ukp1 = lg.solve(mat_z, np.matmul(dmat_z, x))
 
-                xm1 = x
-                x = ukp1 / lg.norm(ukp1)
-                y = vkp1 / lg.norm(vkp1)
+            xm1 = x
+            x = ukp1 / lg.norm(ukp1)
+            y = vkp1 / lg.norm(vkp1)
 
-                vec_conv = lg.norm(x - xm1)
-                if vec_conv > lg.norm(x + xm1) and lg.norm(x + xm1) < 0.1:
-                    print("Inverting eigenvector to reduce phase jump")
-                    print(lg.norm(x - xm1), " > ", lg.norm(x + xm1))
-                    print(xm1)
-                    print("===>")
-                    print(x)
-                    x = -x
-                    y = -y
-                rhok = np.matmul(y.T, np.matmul(mat_z, x)) / np.matmul(y.T, np.matmul(dmat_z, x))
+            # vec_conv = lg.norm(x - xm1)
+            # if vec_conv > lg.norm(x + xm1) and lg.norm(x + xm1) < 0.1:
+            #    print("Inverting eigenvector to reduce phase jump")
+            #    print(lg.norm(x - xm1), " > ", lg.norm(x + xm1))
+            #    print(xm1)
+            #    print("===>")
+            #    print(x)
+            #    x = -x
+            #    y = -y
+            rhok = np.matmul(y.T, np.matmul(mat_z, x)) / np.matmul(y.T, np.matmul(dmat_z, x))
 
+            if (abs(norm_Ax - mem) < 1000 and abs(rhok) < 1e-2):
+                print("Decrease energy steps near convergence: ", end='')
                 print("Initial_energy: ", end='')
                 print(z)
+                z = z - 0.1 * rhok
+                h = h_prec
+                print('energy change: ', end='')
+                print(-0.1 * rhok)
+                print("Energy val :")
+                print(z)
+            else:
+                print("Initial_energy: ", end='')
+                print(z)
+                h = h_coarse
                 z = z - rhok
                 print('energy change: ', end='')
                 print(-rhok)
                 print("Energy val :")
                 print(z)
 
-            if (norm_Ax < precision and abs(rhok) < precision):
+            if (abs(norm_Ax - mem) < 100 and abs(rhok) < precision):
                 print("Iteration converged:")
                 print("    Energy: ", end='')
                 print(abs(rhok))
@@ -89,7 +102,7 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                 converged = True
                 break
 
-            elif np.abs(z - z0) > maxrad:
+            elif np.abs(z - z0) > maxrad or np.imag(z) < 0:
                 print("Getting out of the research zone.")
                 # Reset the energy to the initial energy
                 bas_fun_index = bas_fun_index + 1
@@ -183,11 +196,11 @@ def finite_diff_coeff(order, degree):
         raise ValueError('Invalid degree for finite difference. Only even degree is authorized')
 
 
-def pseudo_spectrum(A: callable, vmax: float):
-    y = np.linspace(0, 0.15, 30)
-    x = np.linspace(1 / 1.2, 1 / .3, 150)
+def pseudo_spectrum(A: callable):
+    y = np.linspace(0, 0.2, 35)
+    x = np.linspace(1., 2.2, 150)
     func_to_plot = partial(abs_det_norm, A)
-    plot_functions.plot_2d_func(func_to_plot, x, y, part='real')
+    plot_functions.plot_2d_func(func_to_plot, x, y, part='real', scale='log')
     # plot_functions.plot_func(func_to_plot,x)
 
 

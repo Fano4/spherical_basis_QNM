@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import BoundaryNorm
+import matplotlib.colors as colors
 from matplotlib.ticker import MaxNLocator
 import numpy as np
 from tqdm import tqdm
@@ -48,8 +49,9 @@ def plot_2d_func(func_to_plot, x, y, **kwargs):
 
     # pick the desired colormap, sensible levels, and define a normalization
     # instance which takes data values and translates those into levels.
-    cmap = plt.get_cmap('RdBu')
-    norm = BoundaryNorm(levels, ncolors=cmap.N, clip=True)
+    cmap = plt.get_cmap('hot')
+    norm = colors.LogNorm(vmin=np.real(Z).min(), vmax=np.real(Z).max())
+    # BoundaryNorm(levels, ncolors=cmap.N, clip=True)
 
     fig, (ax0, ax1) = plt.subplots(nrows=2)
 

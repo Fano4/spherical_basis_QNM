@@ -141,10 +141,10 @@ class basis_set:
         # TODO: Unit testing med_sph_wf_ovlp in basis_set
         # Eq. (7c) in Ref 1
         if isinstance(self.part, list):
-            return [swf.med_sph_wf_ovlp(self.basis[i].l, self.part[self.jlm_to_index(i)[0]], f)
+            return [swf.med_sph_wf_ovlp(self.basis[i], self.part[self.jlm_to_index(i)[0]], f)
                     for i in range(self.size)]
         else:
-            return [swf.med_sph_wf_ovlp(self.basis[i].l, self.part, f)
+            return [swf.med_sph_wf_ovlp(self.basis[i], self.part, f)
                     for i in range(self.size)]
 
     def overlap_matrix(self, f1, f2, eps_i=1):
@@ -153,41 +153,24 @@ class basis_set:
             for i in range(self.size):
                 for j in range(self.size):
                     if self.basis[i].l == self.basis[j].l and self.basis[i].m == self.basis[j].m:
-                        ovlp[i, j] = eps_i * swf.sph_wf_ovlp(self.basis[i].l, self.part[self.jlm_to_index(i)[0]], f1,
-                                                             f2)
+                        ovlp[i, j] = eps_i * swf.sph_wf_ovlp(self.basis[i], self.part[self.jlm_to_index(i)[0]], f1, f2)
         else:
             for i in range(self.size):
                 for j in range(self.size):
                     if self.basis[i].l == self.basis[j].l and self.basis[i].m == self.basis[j].m:
-                        ovlp[i, j] = eps_i * swf.sph_wf_ovlp(self.basis[i].l, self.part, f1, f2)
+                        ovlp[i, j] = eps_i * swf.sph_wf_ovlp(self.basis[i], self.part, f1, f2)
         return ovlp
 
     def sph_wf_norm(self, functype, f):
         # TODO: Unit testing sph_wf_norm in basis_set
-        if functype == 'mat':
-            if self.npart == 1:
-                return [swf.normalization_cst(self.basis[i].l,
-                                              self.part.k(f),
-                                              self.part.R)
-                        for i in range(self.size)]
-            else:
-                return [swf.normalization_cst(self.basis[i].l,
-                                              self.part[self.jlm_to_index(i)[0]].k(f),
-                                              self.part[self.jlm_to_index(i)[0]].R)
-                        for i in range(self.size)]
-        elif functype == 'background':
-            if self.npart == 1:
-                return [swf.normalization_cst(self.basis[i].l,
-                                              self.part.med.k(f),
-                                              self.part.R)
-                        for i in range(self.size)]
-            else:
-                return [swf.normalization_cst(self.basis[i].l,
-                                              self.part[self.jlm_to_index(i)[0]].med.k(f),
-                                              self.part[self.jlm_to_index(i)[0]].R)
-                        for i in range(self.size)]
+        if self.npart == 1:
+            val = [self.basis[i].norm(f, self.part, functype=functype)
+                   for i in range(self.size)]
         else:
-            raise ValueError('Unrecognized normalization type. Support types are \'mat\' and \'background\' ')
+            val = [self.basis[i].norm(f, self.part[self.jlm_to_index(i)[0]], functype)
+                   for i in range(self.size)]
+
+        return val
 
     def basis_fun_integral(self, f):
         k = self.part.k(f)
