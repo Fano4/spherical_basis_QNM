@@ -50,10 +50,10 @@ def plot_2d_func(func_to_plot, x, y, **kwargs):
     # pick the desired colormap, sensible levels, and define a normalization
     # instance which takes data values and translates those into levels.
     cmap = plt.get_cmap('hot')
-    norm = colors.LogNorm(vmin=np.real(Z).min(), vmax=np.real(Z).max())
+    norm = colors.LogNorm(vmin=abs(np.real(Z).min()), vmax=abs(np.real(Z).max()))
     # BoundaryNorm(levels, ncolors=cmap.N, clip=True)
 
-    fig, (ax0, ax1) = plt.subplots(nrows=2)
+    fig, ax0 = plt.subplots()
 
     re = ax0.pcolormesh(X, Y, np.real(Z), cmap=cmap, norm=norm, shading='nearest')
     fig.colorbar(re, ax=ax0)
@@ -61,9 +61,9 @@ def plot_2d_func(func_to_plot, x, y, **kwargs):
 
     # contours are *point* based plots, so convert our bound into point
     # centers
-    im = ax1.pcolormesh(X, Y, np.imag(Z), cmap=cmap, norm=norm, shading='nearest')
-    fig.colorbar(im, ax=ax1)
-    ax1.set_title('Imaginary part')
+    # im = ax1.pcolormesh(X, Y, np.imag(Z), cmap=cmap, norm=norm, shading='nearest')
+    # fig.colorbar(im, ax=ax1)
+    # ax1.set_title('Imaginary part')
 
     # adjust spacing between subplots so `ax1` title and `ax0` tick labels
     # don't overlap

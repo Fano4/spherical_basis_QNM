@@ -38,12 +38,13 @@ class qnm_basis:
         return ovlp_in
 
     def basis_outer_overlap(self, f):
+        im_gf = f / (6 * np.pi)
         deps = self.basis.part.mat.eps(f) - self.basis.part.med.eps(f)
-        green_function_product = np.tensordot(np.conj(self.bg_green(f)), self.bg_green(f), [[1, 3], [0, 2]])
-        G_psi = np.tensordot(green_function_product, self.coeff, axes=[[2, 3], [1, 2]])
-        phi_G_psi = np.tensordot(np.conj(self.coeff), G_psi, axes=[[1, 2], [0, 1]])
-        ovlp = np.abs(deps) ** 2 * phi_G_psi
-        return ovlp.reshape(self.size, self.size)
+        basis_int_mat = f ** 2 * deps * self.basis.basis_fun_integral(f)
+        unnorm_qnm_dip = np.tile(1 / self.energs ** 0.5, [3, 1]).T * np.tensordot(self.coeff, basis_int_mat,
+                                                                                  axes=[1, 0])
+        ovlp = f * im_gf * np.tensordot(unnorm_qnm_dip, np.conj(unnorm_qnm_dip), axes=[1, 1])
+        return ovlp
 
     def qnm_spatial_overlap(self, f, row, col):
         res = np.zeros((self.size, self.size), dtype=complex)
@@ -61,11 +62,11 @@ class qnm_basis:
         arr = np.zeros((self.size, self.size), dtype=complex)
         for row in range(self.size):
             for col in tqdm(range(self.size)):
-                plot_functions.plot_func(lambda f: self.qnm_spatial_overlap(f, row, col), np.linspace(1, 33))
-                val = integ.quad(lambda f: np.real(self.qnm_spatial_overlap(f, row, col)), 1, 33)
+                plot_functions.plot_func(lambda f: self.qnm_spatial_overlap(f, row, col), np.linspace(1, 10))
+                val = integ.quad(lambda f: np.real(self.qnm_spatial_overlap(f, row, col)), 1, 10)
                 arr[row, col] = val[0]
                 print(val[1])
-                val = integ.quad(lambda f: np.imag(self.qnm_spatial_overlap(f, row, col)), 1, 33)
+                val = integ.quad(lambda f: np.imag(self.qnm_spatial_overlap(f, row, col)), 1, 10)
                 arr[row, col] = arr[row, col] + 1j * val[0]
                 print(val[1])
         return arr
@@ -85,7 +86,7 @@ class qnm_basis:
 
         for i in range(self.size):
             deps[i] = self.basis.part.mat.eps(self.energs[i]) - self.basis.part.med.eps(self.energs[i])
-            basis_integr[i] = self.basis.basis_fun_integral(self.energs[i])
+            basis_integr[i] = self.energs[i] ** 1.5 * self.basis.basis_fun_integral(self.energs[i])
             qnm_int[i] = deps[i] * np.tensordot(basis_integr[i], self.coeff[i], axes=[0, 0])
 
         deps = np.tile(deps, (3, 1)).T

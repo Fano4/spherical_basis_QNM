@@ -5,24 +5,33 @@ from scipy import linalg as lg
 import plot_functions
 
 
-def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
-    maxit = 150
-    h_coarse = 1e-3
-    h_prec = 1e-6
+def rayleigh_nep_solver(A: callable, x0: np.ndarray, zvec: (complex, list)) -> list:
+    maxit = 300
+    h_coarse = 1e-4
+    h_prec = 1e-4
     h = h_coarse
     maxrad = 0.5
     convergence = True
-    precision = 1e-3
+    precision = 1e-4
     ztab = []
     xtab = []
     ytab = []
+    num_eigval = 0
     # Enter optimization
     while convergence:
+        print("==================================")
         print("Entering eigenvalue search")
         norm_Ax = 1
         converged = False
         x = x0 / lg.norm(x0)
         y = np.conj(x)
+
+        if isinstance(zvec, list):
+            print("Looking for eigenvalue ", num_eigval, " / ", len(zvec))
+            z0 = zvec[num_eigval]
+        else:
+            z0 = zvec
+
         z = z0
         looping = 0
         bas_fun_index = 0
@@ -42,7 +51,7 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                 for i in range(len(ztab)):
                     mat_z = mat_z - 1 / (z - ztab[i] + 1e-15) * np.outer(xtab[i], ytab[i])
 
-            dmat_z = finite_diff(A, z, h, degree=4)
+            dmat_z = finite_diff(A, z, h, degree=8)
             mem = norm_Ax
             norm_Ax = lg.norm(np.matmul(mat_z, x))
             print('norm_Ax : ', end='')
@@ -85,8 +94,8 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                 print(-rhok)
                 print("Energy val :")
                 print(z)
-
-            if (abs(norm_Ax - mem) < 100 and abs(rhok) < precision):
+            print(abs(norm_Ax - mem), abs(rhok))
+            if abs(norm_Ax - mem) < 100 and abs(rhok) < precision:
                 print("Iteration converged:")
                 print("    Energy: ", end='')
                 print(abs(rhok))
@@ -133,6 +142,13 @@ def rayleigh_nep_solver(A: callable, x0: np.ndarray, z0: complex) -> list:
                 # z = z0
             elif np.isnan(z):
                 raise ValueError("Undefined value of z. Terminating")
+
+        if isinstance(zvec, list):
+            num_eigval = num_eigval + 1
+            if num_eigval + 1 >= len(zvec):
+                convergence = False
+                "Got all the expected eigenvalues. Break"
+                break
 
         if not converged:
             print("The Nonlinear eigenvalue problem did not converge. ")
@@ -197,8 +213,8 @@ def finite_diff_coeff(order, degree):
 
 
 def pseudo_spectrum(A: callable):
-    y = np.linspace(0, 0.2, 35)
-    x = np.linspace(1., 2.2, 150)
+    y = np.linspace(0, 0.25, 50)
+    x = np.linspace(1.4, 2.1, 150)
     func_to_plot = partial(abs_det_norm, A)
     plot_functions.plot_2d_func(func_to_plot, x, y, part='real', scale='log')
     # plot_functions.plot_func(func_to_plot,x)
