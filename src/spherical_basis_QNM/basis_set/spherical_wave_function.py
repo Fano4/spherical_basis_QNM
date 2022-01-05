@@ -1,8 +1,9 @@
 import mpmath
 import numpy as np
-import particle
-import mathfunctions
 import scipy.special as sp
+
+from src.spherical_basis_QNM.particle import particle
+from src.spherical_basis_QNM.mathfunctions import mathfunctions
 
 
 class sph_wf_symbol:
@@ -57,7 +58,7 @@ class sph_wf_symbol:
         elif not part.inout(r) and (inout == 'out' or inout == 'inout'):
             values = self.outgo_form(r, f, part, trans)
         else:
-            raise ValueError("Impossible to determine whether r is in or out of the particle")
+            values = np.zeros(self.length, dtype=complex)
 
         return [norm_cst.tolist(), values.tolist()]
 
@@ -102,7 +103,7 @@ class sph_wf_symbol:
         norm_cst = np.zeros(self.length, dtype=complex)
         for i in range(self.length):
             l = self.l[i]
-            modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, part.R)
+            modsqr = mathfunctions.psph_bessel_ovlp(l, k, k, part.R)
             norm_cst[i] = 1 / np.sqrt(modsqr)  # Branch cut square root
         return norm_cst
 
@@ -177,9 +178,9 @@ class sph_wf_symbol:
             ll = np.concatenate([l + 1, l - 1])
             ml = np.concatenate([m, m])
 
-        return check_values(al, ll, ml)
+        return check_values(al * a, ll, ml)
 
-    def print_values(self, ):
+    def print_values(self):
         print("spf_wf object with the coefficients : ")
         print("a         l         m")
         print(np.stack([self.a, self.l, self.m]).T)
@@ -229,33 +230,12 @@ class sph_wf_symbol:
             hyperg = mpmath.hyper([(3 + self.l[i]) / 2], [3 / 2 + self.l[i], (5 + self.l[i]) / 2],
                                   -0.25 * k ** 2 * r ** 2)
             float_hyperg = float(mpmath.nstr(hyperg.real, 6)) + 1j * float(mpmath.nstr(hyperg.imag, 6))
-            vec[i] = 0.5 ** (2 + self.l[i]) * np.pi ** 0.5 * r ** 3 * (k * r) ** self.l[i] * sp.gamma(
+            vec[i] = (4 * np.pi) ** 0.5 * 0.5 ** (2 + self.l[i]) * np.pi ** 0.5 * r ** 3 * (k * r) ** self.l[
+                i] * sp.gamma(
                 (3 + self.l[i]) / 2) \
                      * float_hyperg
 
         return np.sum(self.a * vec)
-
-
-# def normalization_cst(l, k, R):
-#    modsqr = mathfunctions.psph_Bessel_ovlp(l, k, k, R)
-#    if isinstance(modsqr, np.ndarray) and len(modsqr.shape) == 1:
-#        Rez = np.real(1 / modsqr)
-#        Imz = np.imag(1 / modsqr)
-#        mathfunctions.psquare_root(Rez, Imz)
-#        return Rez + 1j * Imz
-#    elif isinstance(modsqr, np.ndarray) and len(modsqr.shape) == 2 and modsqr.shape[1] == 1:
-#        modsqr = modsqr.reshape(modsqr.shape[0])
-#        Rez = np.real(1 / modsqr)
-#        Imz = np.imag(1 / modsqr)
-#        mathfunctions.psquare_root(Rez, Imz)
-#        if modsqr.shape[0] == 1:
-#            Rez = Rez[0]
-#            Imz = Imz[0]
-#        return Rez + 1j * Imz
-#    elif isinstance(modsqr, (float, int, complex)):
-#        return 1 / np.sqrt(modsqr)
-#    else:
-#        raise TypeError("Unrecognized type for the psquare_root function", type(modsqr))
 
 
 def sph_wf_deriv_tensor(a, l, m):
@@ -273,27 +253,27 @@ def sph_wf_deriv_tensor(a, l, m):
     return tsr
 
 
-def med_sph_wf_ovlp(sph_wf, part, f):
+def med_sph_wf_ovlp(sph_wf, part, f) -> np.array:
     """This function implements the finite integral of two spherical bessel functions with
-    a k value for the material and for the background. Eq. (7c) in ref 1"""
-    # TODO Unit test med_sph_wf_ovlp in sph_wf_symbol
+    a k value for the material and for the background. Eq. (7c) in ref 1
+    It returns a 1-D numpy array with each element being the result for each l value"""
 
-    normk = sph_wf.norm(f, part, functype='mat')
-    normkb = sph_wf.norm(f, part, functype='background')
+    normk = sph_wf.norm(f, part, functype='mat')[0]
+    normkb = sph_wf.norm(f, part, functype='background')[0]
     prefac = normk * normkb
 
     k = part.k(f)
     kb = part.med.k(f)
     R = part.R
-    ovlp = prefac * mathfunctions.psph_Bessel_ovlp(sph_wf.l, k, kb, R)
+    ovlp = prefac * mathfunctions.psph_bessel_ovlp(sph_wf.l, k, kb, R)
 
     return ovlp
 
 
 def sph_wf_ovlp(sph_wf, part, f1, f2):
     """This function implements the finite integral of two spherical bessel functions in the material
-    at two frequencies."""
-    # TODO Unit test med_sph_wf_ovlp in sph_wf_symbol
+    at two frequencies.
+    It returns a 1-D numpy array with each element being the result for each l value"""
     normk = sph_wf.norm(f1, part, functype='mat')
     normkb = sph_wf.norm(f2, part, functype='mat')
     prefac = normk * normkb
@@ -308,8 +288,8 @@ def sph_wf_ovlp(sph_wf, part, f1, f2):
 
 def space_rad_integ(l, k, kb):
     # Eq D4 in ref 1
-    # TODO Unit test space_rad_integ
-    return -1j / kb * 1 / (k ** 2 - kb ** 2) * (k / kb) ** l
+    # TODO: Work on a test for space_rad_int... This one is very hard...
+    return -1j / np.real(kb) * 1 / (np.real(k) ** 2 - np.real(kb) ** 2) * (np.real(k) / np.real(kb)) ** l
 
 
 def fin_rad_integ(sph_wf, part, f):
@@ -326,20 +306,15 @@ def fin_rad_integ(sph_wf, part, f):
 
     l = sph_wf.l
     fac = np.sqrt((k / kb) ** (2 * l + 1))
-    #    if isinstance(num, np.ndarray):
-    #        Rez = np.real(num)
-    #        Imz = np.imag(num)
-    #        mathfunctions.psquare_root(Rez, Imz)
-    #        fac = Rez + Imz * 1j
-    #    else:
 
     main_term = k * R * sp.yv(l + 0.5, kb * R) * sp.jv(l + 1.5, k * R) - kb * R * sp.jv(l + 0.5, k * R) \
-                * sp.yv(l + 1.5, kb * R) - fac * 2 / np.pi
+                * sp.yv(l + 1.5, kb * R) - fac * 2. / np.pi
 
     return ovlp_term + prefactor * main_term
 
 
 def check_values(a, l, m):
+    # TODO: sort the values by increasing value of l and m
     if not isinstance(a, np.ndarray):
         a = np.array([a])
         l = np.array([l])

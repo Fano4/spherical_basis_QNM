@@ -1,11 +1,10 @@
 import numpy as np
 from numpy import random as rd
 import pytest
-from scipy import special as sp
-import separation_matrix as sep
-import spherical_wave_function as swf
-import particle
-import material
+from src.spherical_basis_QNM.basis_set import spherical_wave_function as swf
+from src.spherical_basis_QNM.separation_matrix import separation_matrix as sep
+from src.spherical_basis_QNM.particle import particle
+from src.spherical_basis_QNM.material import material
 
 
 def test_special_case_0():
@@ -59,13 +58,13 @@ def test_special_case_1():
     f = 1.0
     rad = 2 * np.sum(r2 ** 2) ** 0.5
 
-    n = 0
-    m = 0
+    n = 2
+    m = 1
 
     mat = material.material(1.0)
     part = particle.particle(np.array([0.0, 0.0, 0.0]), rad, mat)
     wf1 = swf.sph_wf_symbol(1, n, m)
-    ref = wf1(r2, f, part)[1][0]
+    ref = wf1(b, f, part)[1][0]
     sepmat = sep.separation_matrix(1.0, n, m, 0, 0)
     val = sepmat(b, f, part, type='in')
 

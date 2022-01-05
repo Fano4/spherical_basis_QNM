@@ -12,8 +12,8 @@
 #
 #
 import numpy as np
-import spherical_wave_function as swf
-import separation_matrix as sep
+from src.spherical_basis_QNM.basis_set import spherical_wave_function as swf
+from src.spherical_basis_QNM.separation_matrix import separation_matrix as sep
 
 
 class basis_set:

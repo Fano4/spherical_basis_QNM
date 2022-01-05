@@ -3,9 +3,9 @@
 # in a dielectric medium represented as a material with real valued permittivity.
 
 import numpy as np
-import mathfunctions
+from src.spherical_basis_QNM.mathfunctions import mathfunctions
 
-import material
+from src.spherical_basis_QNM.material import material
 
 
 class particle:
@@ -35,8 +35,22 @@ class particle:
         return sph
 
     def inout(self, r):
-
-        return float(self.R ** 2 > (r[0] - self.pos[0]) ** 2 + (r[1] - self.pos[1]) ** 2 + (r[2] - self.pos[2]) ** 2)
+        if isinstance(r, np.ndarray):
+            if len(r.shape) == 1 and r.shape[0] == 3:
+                return float(
+                    self.R ** 2 > (r[0] - self.pos[0]) ** 2 + (r[1] - self.pos[1]) ** 2 + (r[2] - self.pos[2]) ** 2)
+            elif len(r.shape) == 2 and r.shape[1] == 3:
+                result = np.zeros(len(r.shape), dtype=float)
+                for i in range(len(r.shape)):
+                    result[i] = float(
+                        self.R ** 2 > (r[i, 0] - self.pos[0]) ** 2 + (r[i, 1] - self.pos[1]) ** 2 +
+                        (r[i, 2] - self.pos[2]) ** 2)
+                return result
+            else:
+                raise ValueError("Invalid dimensionality for coordinate array in inout function. Expected numpy \
+                    ndarray with shape (n, 3); got ", r.shape)
+        else:
+            raise TypeError("Invalid coordinate array in inout function. Expected numpy ndarray, got ", type(r))
 
     def k(self, f):
         k = self.mat.k(f)

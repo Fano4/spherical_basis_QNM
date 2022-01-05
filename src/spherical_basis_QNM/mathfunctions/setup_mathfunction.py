@@ -9,8 +9,8 @@ ext = Extension("mathfunctions",
                          "C_MathFunctions/spherical_harmonics.cpp"],
                 language="c++",
                 include_dirs=[np.get_include(),
-                              '/usr/local/Caskroom/miniconda/base/envs/spherical_basis_QNM/include/python3.9/'
-                    , '/usr/local/Cellar/gsl/2.7/include'],
+                              '/usr/local/Caskroom/miniconda/base/envs/spherical_basis_QNM/include/python3.9/',
+                              '/usr/local/Cellar/gsl/2.7/include'],
                 library_dirs=['/usr/local/Cellar/gsl/2.7/lib'],
                 libraries=['gsl'])
 setup(name="math_fun",

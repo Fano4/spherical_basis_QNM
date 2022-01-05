@@ -1,5 +1,5 @@
 import numpy as np
-import mathfunctions
+from src.spherical_basis_QNM.mathfunctions import mathfunctions
 
 # The equations and constants used have been published in https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4875142/pdf/11468_2015_Article_128.pdf
 
@@ -17,7 +17,8 @@ def eps_drude(fp, gam, f):
 
 def eps_logistic_fun(deps, fl, gaml, f):
     f = f * hz_um_scale
-    return 1j * deps / (1 + np.exp(-(f - fl) / gaml))
+    cutoff = 3.5 * hz_um_scale
+    return 1j * deps / (1 + np.exp(-(f - fl) / gaml)) - 1j * deps / (1 + np.exp(-(f - cutoff) / gaml))
 
 
 # def eps_lorentz(deps, fl, gaml, f):

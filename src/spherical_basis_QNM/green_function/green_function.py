@@ -9,9 +9,8 @@
 import numpy as np
 from scipy import linalg as lg
 
-import basis_set
-import separation_matrix
-import spherical_wave_function as swf
+from src.spherical_basis_QNM.basis_set import basis_set, spherical_wave_function as swf
+from src.spherical_basis_QNM.separation_matrix import separation_matrix
 
 
 class green_function:
@@ -74,7 +73,7 @@ def self_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f, verbos
     kj = basis_set.part.mat.k(f)
     prefactor = 1j * kb / (4 * np.pi) ** 0.5 * basis_set.sph_wf_norm('mat', f)[bas_i]
     diag_sep = basis_set.basis_separation_mat[bas_j][0].sph_basis_proj(basis_set, f)[bas_i]
-    radial_princ_integ_0 = -(1j / kb) / (kj ** 2 - kb ** 2)
+    radial_princ_integ_0 = swf.space_rad_integ(0, kj, kb)
     term_1 = [[(i == j) * diag_sep * radial_princ_integ_0 for i in range(3)] for j in range(3)]
 
     # The hessian tensor is a 3x3 list with the coefficients of each components of the hessian in the swf basis
@@ -97,7 +96,7 @@ def self_block_spherical(basis_set: basis_set.basis_set, bas_i, bas_j, f, verbos
             temp_hess = ([separation_matrix.separation_matrix(hessian_bas_comp[k], lj, mj, gam_p[k], gam_pp[k])
                               .sph_basis_proj(basis_set, f)[bas_i] for k in range(basis_set.size)])
 
-            temp_rad_princi = [-(1j / kb) * 1 / (kj ** 2 - kb ** 2) * (kj / kb) ** basis_set.basis[k].l
+            temp_rad_princi = [swf.space_rad_integ(basis_set.basis[k].l, kj, kb)
                                for k in range(basis_set.size)]
 
             temp_term_2.append((1 / kb ** 2) * np.sum((-1) ** (abs(-mval)) *

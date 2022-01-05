@@ -1,11 +1,13 @@
 import numpy as np
 from scipy import integrate as integ
 from scipy import linalg as lg
-import green_function
 from tqdm import tqdm
 
+from src.spherical_basis_QNM.green_function import green_function
+from src.spherical_basis_QNM.plot_functions import plot_functions
+
+
 # quantize the quasi-normal modes as described by Franke et al. Phys rev res 2020
-import plot_functions
 
 
 class qnm_basis:
@@ -26,23 +28,28 @@ class qnm_basis:
         return
 
     def basis_inner_overlap(self, f):
-        basis_ovlp = np.zeros((self.basis.size_ini, self.basis.size_ini), dtype=complex)
+        tmp = np.zeros((self.basis.size_ini, self.basis.size_ini), dtype=complex)
+        basis_ovlp = np.zeros((self.size, self.size), dtype=complex)
         eps_i = np.imag(self.basis.part.mat.eps(f))
 
-        for i in range(self.basis.size_ini):
-            for j in range(self.basis.size_ini):
-                basis_ovlp[i, j] = self.basis.overlap_matrix(self.energs[i], self.energs[j], eps_i)[i, j]
+        for m in range(self.size):
+            for n in range(self.size):
+                for i in range(self.basis.size_ini):
+                    for j in range(self.basis.size_ini):
+                        tmp[i, j] = self.basis.overlap_matrix(self.energs[m], self.energs[n], eps_i)[i, j]
 
-        ovlp_in = np.tensordot(np.conj(self.coeff), np.tensordot(basis_ovlp, self.coeff, axes=[1, 1])
-                               , axes=[[1, 2], [0, 2]])
-        return ovlp_in
+                basis_ovlp[m, n] = np.sum(np.diag(np.tensordot(self.coeff, np.tensordot(tmp, np.conj(self.coeff),
+                                                                                        axes=[1, 1]),
+                                                               axes=[[1, 2], [0, 2]])))
+
+        return basis_ovlp
 
     def basis_outer_overlap(self, f):
         im_gf = f / (6 * np.pi)
         deps = self.basis.part.mat.eps(f) - self.basis.part.med.eps(f)
-        basis_int_mat = f ** 2 * deps * self.basis.basis_fun_integral(f)
-        unnorm_qnm_dip = np.tile(1 / self.energs ** 0.5, [3, 1]).T * np.tensordot(self.coeff, basis_int_mat,
-                                                                                  axes=[1, 0])
+        basis_int_mat = deps * self.basis.basis_fun_integral(f)
+        unnorm_qnm_dip = np.tile(np.sqrt(self.energs), [3, 1]).T * np.tensordot(self.coeff, basis_int_mat,
+                                                                                axes=[1, 0])
         ovlp = f * im_gf * np.tensordot(unnorm_qnm_dip, np.conj(unnorm_qnm_dip), axes=[1, 1])
         return ovlp
 
@@ -62,7 +69,7 @@ class qnm_basis:
         arr = np.zeros((self.size, self.size), dtype=complex)
         for row in range(self.size):
             for col in tqdm(range(self.size)):
-                plot_functions.plot_func(lambda f: self.qnm_spatial_overlap(f, row, col), np.linspace(1, 10))
+                plot_functions.plot_func(lambda f: self.qnm_spatial_overlap(f, row, col), np.linspace(1, 7))
                 val = integ.quad(lambda f: np.real(self.qnm_spatial_overlap(f, row, col)), 1, 10)
                 arr[row, col] = val[0]
                 print(val[1])
@@ -86,7 +93,7 @@ class qnm_basis:
 
         for i in range(self.size):
             deps[i] = self.basis.part.mat.eps(self.energs[i]) - self.basis.part.med.eps(self.energs[i])
-            basis_integr[i] = self.energs[i] ** 1.5 * self.basis.basis_fun_integral(self.energs[i])
+            basis_integr[i] = np.sqrt(self.energs[i]) * self.basis.basis_fun_integral(self.energs[i])
             qnm_int[i] = deps[i] * np.tensordot(basis_integr[i], self.coeff[i], axes=[0, 0])
 
         deps = np.tile(deps, (3, 1)).T

@@ -1,14 +1,6 @@
-import sys
-import random
 import numpy as np
-import scipy.integrate as integ
-import scipy.special as sp
 
-from functools import partial
-
-sys.path.append("/Users/stephan/PycharmProjects/spherical_basis_QNM/")
-
-import rayleigh_iteration as rit
+from src.spherical_basis_QNM.rayleigh_iteration import rayleigh_iteration as rit
 
 
 def test_linear_rayleigh_nep_solver():

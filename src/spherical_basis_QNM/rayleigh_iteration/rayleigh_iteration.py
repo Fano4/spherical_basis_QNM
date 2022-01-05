@@ -1,9 +1,5 @@
-from functools import partial
 import numpy as np
 from scipy import linalg as lg
-
-import plot_functions
-
 
 def rayleigh_nep_solver(A: callable, x0: np.ndarray, zvec: (complex, list)) -> list:
     maxit = 300
@@ -212,23 +208,4 @@ def finite_diff_coeff(order, degree):
         raise ValueError('Invalid degree for finite difference. Only even degree is authorized')
 
 
-def pseudo_spectrum(A: callable):
-    y = np.linspace(0, 0.25, 50)
-    x = np.linspace(1.4, 2.1, 150)
-    func_to_plot = partial(abs_det_norm, A)
-    plot_functions.plot_2d_func(func_to_plot, x, y, part='real', scale='log')
-    # plot_functions.plot_func(func_to_plot,x)
 
-
-def inv_det_norm(A, x, y):
-    num = lg.det(A(x + y * 1j))
-    # if num < 1e-4:
-    #    num = 1
-    return 1 / (num + 1e-6)
-
-
-def abs_det_norm(A, x, y):
-    num = np.abs(lg.det(A(x + y * 1j)))
-    # if num < 1e-4:
-    #    num = 1
-    return num

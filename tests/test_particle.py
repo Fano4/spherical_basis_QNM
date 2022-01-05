@@ -1,11 +1,8 @@
-import sys
-
-sys.path.append('/Users/stephan/PycharmProjects/spherical_basis_QNM/')
 import numpy as np
 from numpy import random as rd
 
-import particle
-import material
+from src.spherical_basis_QNM.material import material
+from src.spherical_basis_QNM.particle import particle
 
 
 def test_cart_sph_transform():
@@ -31,10 +28,10 @@ def test_inout():
     d = rd.rand(3, 10)
     r = np.array([R * d[0], np.pi * d[1], 2 * np.pi * d[2]])
     points_in = np.array([r[0] * np.sin(r[1]) * np.cos(r[2]) + cen[0], r[0] * np.sin(r[1]) * np.sin(r[2]) + cen[1],
-                          r[0] * np.cos(r[1]) + cen[2]])
+                          r[0] * np.cos(r[1]) + cen[2]]).T
     r = np.array([10 + 5 * R * d[0], np.pi * d[1], 2 * np.pi * d[2]])
     points_out = np.array([r[0] * np.sin(r[1]) * np.cos(r[2]) + cen[0], r[0] * np.sin(r[1]) * np.sin(r[2]) + cen[1],
-                           r[0] * np.cos(r[1]) + cen[1]])
+                           r[0] * np.cos(r[1]) + cen[1]]).T
 
     assert np.all(p.inout(points_in))
-    assert not np.all(p.inout(points_out))
+    assert not np.any(p.inout(points_out))

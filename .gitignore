@@ -26,7 +26,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-mathfunctions.cpp
+src/spherical_basis_QNM/mathfunctions/mathfunctions.cpp
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

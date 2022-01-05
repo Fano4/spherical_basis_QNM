@@ -9,11 +9,12 @@
 #
 #       p, t are the l- and m- values of the final basis function
 #       n, m are the l- and m-value of the initial basis function
-import spherical_wave_function as swf
-import mathfunctions
-import particle
+
 import numpy as np
 from sympy.physics.wigner import gaunt
+
+from src.spherical_basis_QNM.basis_set import spherical_wave_function as swf
+from src.spherical_basis_QNM.particle import particle
 
 
 class separation_matrix(swf.sph_wf_symbol):

@@ -1,9 +1,7 @@
-import sys
+import sys, os
 import numpy as np
 
-sys.path.append('~/PycharmProjects/spherical_basis_QNM/')
-import material
-
+from src.spherical_basis_QNM.material import material
 
 def test_cst_eps():
     eps = 3.2
@@ -21,5 +19,5 @@ def test_drude_model():
 
 def test_refr_index():
     n = 2.25
-    c = material.material(n**2)
+    c = material.material(n ** 2)
     assert c.n(0.1) == n
